@@ -8,6 +8,9 @@ data/land.json(world-atlas 110m 육지 윤곽)을 src/earth-bpm.template.html에
     python3 build.py                     # index.html (완전한 HTML 문서, GitHub Pages용)
     python3 build.py --artifact PATH     # 같은 내용을 claude.ai 아티팩트용 조각 HTML로
     python3 build.py --local DIR         # three.js를 DIR(npm three@0.128.0 패키지)에서 읽는 테스트용
+    python3 build.py --three URL         # three.js를 URL에서 읽는 테스트용 (로컬 웹 서버)
+
+악기 소리는 voices/*.mp3를 페이지 옆에서 불러오므로, 웹 서버(GitHub Pages 등)로 열어야 들린다.
     python3 build.py --out PATH          # 출력 경로 바꾸기
 """
 import csv, json, sys, os, datetime as dt
@@ -130,7 +133,12 @@ def build_data():
         print(f"  {s['key']:10s} {len(ev):4d}건  M{min(r['mag'] for r in rows):.1f}~{max(r['mag'] for r in rows):.1f}", file=sys.stderr)
     with open(os.path.join(DATA, "land.json")) as f:
         land = json.load(f)
-    return {"scenes": out, "land": land, "fetchedAt": "2026-10-15T23:58:00Z"}
+    # 악기 소리(voices/*.mp3)의 칸 길이와 음 목록. 소리 파일은 페이지가 필요할 때 따로 불러온다.
+    with open(os.path.join(HERE, "voices", "voices.json")) as f:
+        vm = json.load(f)
+    voices = {"notes": vm["notes"], "lead": vm["lead"],
+              "voices": {k: {kk: vv for kk, vv in v.items() if kk != "program"} for k, v in vm["voices"].items()}}
+    return {"scenes": out, "land": land, "voices": voices, "fetchedAt": "2026-10-15T23:58:00Z"}
 
 
 def standalone(html):
@@ -149,7 +157,7 @@ def arg(name):
 
 
 def main():
-    local, artifact = arg("--local"), arg("--artifact")
+    local, artifact, three = arg("--local"), arg("--artifact"), arg("--three")
     out_path = arg("--out") or artifact or os.path.join(HERE, "index.html")
     with open(os.path.join(HERE, "src", "earth-bpm.template.html"), encoding="utf-8") as f:
         html = f.read()
@@ -157,6 +165,8 @@ def main():
     html = html.replace("/*__DATA__*/null", data)
     if local:
         html = html.replace("https://cdn.jsdelivr.net/npm/three@0.128.0", "file://" + os.path.abspath(local))
+    if three:
+        html = html.replace("https://cdn.jsdelivr.net/npm/three@0.128.0", three.rstrip("/"))
     if not artifact:
         html = standalone(html)
     with open(out_path, "w", encoding="utf-8") as f:

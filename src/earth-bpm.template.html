@@ -2,7 +2,7 @@
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hahmlet:wght@300;500;700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hahmlet:wght@300;500;700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+KR:wght@400;500;600&family=VT323&display=swap">
 <style>
 /* Layout: the globe is a full-bleed night stage; the instruments dock to its edges like an observatory console. */
 :root{
@@ -16,6 +16,8 @@
   --f-display:'Hahmlet','Noto Serif KR','AppleMyungjo',serif;
   --f-body:'IBM Plex Sans KR','Apple SD Gothic Neo','Malgun Gothic',system-ui,sans-serif;
   --f-mono:'IBM Plex Mono',ui-monospace,'SFMono-Regular',Menlo,Consolas,monospace;
+  --f-lcd:'VT323','IBM Plex Mono',ui-monospace,monospace;
+  --lcd:#8ffff0; --lcd-dim:rgba(150,255,235,.62);
   --r:14px;
 }
 html,body{height:100%}
@@ -31,7 +33,8 @@ button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid var(-
 /* ---------- HUD grid ---------- */
 #hud{position:absolute;inset:0;display:grid;grid-template-columns:minmax(0,1fr) 352px;grid-template-rows:auto minmax(0,1fr) auto;column-gap:20px;row-gap:14px;padding-block:18px 14px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));pointer-events:none;z-index:2}
 #hud>*{pointer-events:auto}
-.glass{background:var(--glass);border:1px solid var(--line);border-radius:var(--r);backdrop-filter:blur(14px) saturate(140%);-webkit-backdrop-filter:blur(14px) saturate(140%)}
+.glass{position:relative;background:var(--glass);border:1px solid var(--line);border-radius:var(--r);backdrop-filter:blur(14px) saturate(140%);-webkit-backdrop-filter:blur(14px) saturate(140%);box-shadow:0 18px 50px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.04)}
+.glass::after{content:"";position:absolute;inset:-1px;border-radius:inherit;padding:1px;background:linear-gradient(140deg,rgba(175,195,255,.42),rgba(150,170,255,.05) 34%,rgba(150,170,255,.04) 66%,rgba(255,61,110,.38));-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);mask-composite:exclude;pointer-events:none}
 
 /* ---------- top bar ---------- */
 #topbar{grid-column:1/-1;grid-row:1;display:flex;justify-content:space-between;align-items:flex-start;gap:16px;pointer-events:none}
@@ -55,17 +58,21 @@ button.pill{cursor:pointer}
 .pill.scene{color:var(--ink)}
 .pill.scene b{font-family:var(--f-mono);font-weight:600;color:var(--gold)}
 
-.bpm{display:grid;grid-template-columns:auto auto;align-items:center;column-gap:12px;padding:10px 16px 10px 14px}
+.bpm{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;column-gap:12px;padding:10px 16px 10px 14px;min-width:240px;box-sizing:border-box}
+#ecg{grid-column:1/-1;display:block;width:0;min-width:100%;height:34px;margin-top:8px}
+.bpm{transition:box-shadow .5s,border-color .5s}
+.bpm.alert{border-color:rgba(255,61,110,.75);box-shadow:0 0 0 1px rgba(255,61,110,.35),0 0 48px rgba(255,61,110,.45),inset 0 0 30px rgba(255,61,110,.2)}
+.bpm.alert .bpm-num{color:#ffe1e8;text-shadow:0 0 18px rgba(255,61,110,.95)}
 .bpm .heart{width:34px;height:31px;fill:var(--heart);filter:drop-shadow(0 0 10px rgba(255,61,110,.65));transform-origin:50% 60%}
 .bpm-num{font:600 40px/1 var(--f-mono);font-variant-numeric:tabular-nums;letter-spacing:-.02em}
 .bpm-num small{font-size:13px;font-weight:500;color:var(--ink-2);margin-left:6px;letter-spacing:.08em}
-.bpm-sub{grid-column:1/-1;font-size:12px;color:var(--ink-2);margin-top:6px;display:flex;justify-content:space-between;gap:10px}
+.bpm-sub{grid-column:1/-1;font-size:12px;color:var(--ink-2);margin-top:4px;display:flex;justify-content:space-between;gap:10px}
 .bpm-sub b{color:var(--ink);font-weight:500}
 
 /* ---------- panel ---------- */
 #panel{grid-column:2;grid-row:2;align-self:start;max-height:100%;min-height:0;display:flex;flex-direction:column;overflow:hidden}
 .sheet-head{display:none}
-.tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:2px;padding:6px;border-bottom:1px solid var(--line)}
+.tabs{display:grid;grid-template-columns:repeat(5,1fr);gap:2px;padding:6px;border-bottom:1px solid var(--line)}
 .tabs button{background:none;border:0;padding:9px 4px;border-radius:9px;font-size:12.5px;color:var(--ink-2);cursor:pointer;white-space:nowrap}
 .tabs button[aria-selected="true"]{background:rgba(150,170,255,.12);color:var(--ink)}
 .tabs button:hover{color:var(--ink)}
@@ -123,7 +130,7 @@ h3{margin:0;font:500 15px/1.3 var(--f-display);text-wrap:balance}
 .voice{display:grid;grid-template-columns:14px minmax(0,1fr) auto;gap:10px;align-items:center}
 .voice i{width:12px;height:12px;border-radius:50%;box-shadow:0 0 10px currentColor;background:currentColor}
 .voice .vn{font-weight:500}
-.voice .vr{font:11px var(--f-mono);color:var(--ink-3);margin-left:6px}
+.voice .vr{font:11px var(--f-mono);color:var(--ink-3);margin-left:6px;white-space:nowrap;display:inline-block}
 .voice p{margin:0;font-size:12px;color:var(--ink-2)}
 .scale{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:4px}
 .scale div{text-align:center;border:1px solid var(--line);border-radius:8px;padding:6px 2px;display:flex;flex-direction:column;gap:2px}
@@ -182,7 +189,7 @@ h3{margin:0;font:500 15px/1.3 var(--f-display);text-wrap:balance}
 .ghost{border:1px solid var(--line-2);border-radius:999px;padding:13px 22px;background:rgba(10,14,30,.5);color:var(--ink);font-size:15px;cursor:pointer}
 .gate-hint{font-size:12.5px!important;color:var(--ink-3)!important}
 
-#caption{position:absolute;left:50%;top:22%;transform:translate(-50%,10px);z-index:5;text-align:center;pointer-events:none;opacity:0;padding:18px 28px 22px;background:radial-gradient(ellipse at 50% 50%,rgba(3,4,10,.72),rgba(3,4,10,.38) 55%,rgba(3,4,10,0) 75%);transition:opacity .6s ease,transform .8s cubic-bezier(.2,.8,.2,1);width:min(92vw,720px)}
+#caption{position:absolute;left:50%;top:22%;transform:translate(-50%,10px);z-index:5;text-align:center;pointer-events:none;opacity:0;padding:18px 28px 22px;background:radial-gradient(ellipse at 50% 50%,rgba(3,4,10,.6),rgba(3,4,10,.3) 50%,rgba(3,4,10,0) 72%);transition:opacity .6s ease,transform .8s cubic-bezier(.2,.8,.2,1);width:min(92vw,720px)}
 #caption.show{opacity:1;transform:translate(-50%,0)}
 .cap-mag{font:600 clamp(40px,7vw,72px)/1 var(--f-mono);letter-spacing:-.02em;color:#fff;text-shadow:0 0 40px var(--q),0 0 90px var(--q)}
 .cap-title{font:500 clamp(18px,2.6vw,26px)/1.3 var(--f-display);margin-top:8px;text-shadow:0 2px 20px rgba(0,0,0,.9);text-wrap:balance}
@@ -191,6 +198,99 @@ h3{margin:0;font:500 15px/1.3 var(--f-display);text-wrap:balance}
 #toast.show{opacity:1;transform:translate(-50%,0)}
 #pickHint{position:absolute;left:50%;bottom:30%;transform:translateX(-50%);z-index:6;pointer-events:none}
 .nogl{position:absolute;inset:0;display:grid;place-items:center;color:var(--ink-3);font-size:13px;padding:24px;text-align:center}
+
+
+/* ---------- keyboard voice LCD (like an arranger keyboard's display) ---------- */
+.kbd{flex:none;display:flex;align-items:stretch;gap:4px}
+.kbd-arrow{flex:none;width:26px;border:1px solid var(--line-2);border-radius:8px;background:linear-gradient(180deg,rgba(46,54,90,.75),rgba(14,18,34,.85));color:var(--ink-2);font-size:10px;cursor:pointer;display:grid;place-items:center;box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 2px 0 rgba(0,0,0,.45)}
+.kbd-arrow:hover{color:var(--ink)}
+.kbd-arrow:active{transform:translateY(1px);box-shadow:inset 0 1px 0 rgba(255,255,255,.05)}
+.lcd{position:relative;display:grid;grid-template-columns:auto minmax(0,1fr);align-items:baseline;column-gap:8px;row-gap:1px;width:212px;box-sizing:border-box;padding:5px 10px 6px;border-radius:8px;border:1px solid rgba(96,255,220,.30);background:radial-gradient(130% 150% at 25% 0%,#103d3b 0%,#072321 55%,#041514 100%);color:var(--lcd);text-align:left;cursor:pointer;box-shadow:inset 0 0 18px rgba(0,0,0,.65),0 0 24px rgba(60,255,210,.10);overflow:hidden;font-family:var(--f-lcd)}
+.lcd::before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(0deg,rgba(0,0,0,.24) 0 1px,transparent 1px 3px),linear-gradient(180deg,rgba(255,255,255,.06),transparent 40%);pointer-events:none}
+.lcd:hover{border-color:rgba(96,255,220,.55)}
+.lcd-num{font-size:26px;line-height:.9;text-shadow:0 0 8px rgba(110,255,230,.85)}
+.lcd-name{font-size:20px;line-height:.95;letter-spacing:.05em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:0 0 7px rgba(110,255,230,.75)}
+.lcd-ko{display:none;font:500 12.5px/1.2 var(--f-body);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--lcd)}
+.lcd-sub{grid-column:1/-1;display:flex;justify-content:space-between;align-items:baseline;gap:8px;min-width:0;font:500 10.5px/1.25 var(--f-body);color:var(--lcd-dim);white-space:nowrap}
+.lcd-sub>span:first-child{overflow:hidden;text-overflow:ellipsis}
+.lcd-beat{font:15px/1 var(--f-lcd);letter-spacing:.06em;color:var(--lcd)}
+.lcd.loading #lcdSub,.lcd.loading #lcdBigSub{animation:lcdBlink 1.1s steps(2,jump-none) infinite}
+.lcd.fail #lcdSub,.lcd.fail #lcdBigSub{color:#ffd27a}
+@keyframes lcdBlink{50%{opacity:.25}}
+.lcd.big{display:flex;flex-direction:column;align-items:stretch;gap:3px;width:100%;max-width:none;cursor:default;padding:10px 14px 11px}
+.lcd-top{display:flex;justify-content:space-between;align-items:baseline;gap:4px 12px;flex-wrap:wrap;font-size:16px;letter-spacing:.08em;color:var(--lcd-dim)}
+.lcd-top b{font-weight:400;font-size:24px;color:var(--lcd);text-shadow:0 0 8px rgba(110,255,230,.8);margin-left:6px}
+.lcd.big .lcd-name{font-size:31px}
+.lcd.big .lcd-sub{font-size:12px}
+.kbd-row{display:flex;gap:6px;flex-wrap:wrap}
+.vgroup{display:flex;flex-direction:column;gap:6px}
+.vgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+.vrow{display:flex;flex-wrap:wrap;gap:6px}
+.vbtn{display:grid;grid-template-columns:auto minmax(0,1fr) 8px;align-items:center;gap:7px;padding:8px 9px;border-radius:9px;border:1px solid var(--line);background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.01));cursor:pointer;text-align:left;box-shadow:inset 0 1px 0 rgba(255,255,255,.05),0 2px 0 rgba(0,0,0,.35);transition:border-color .2s,background .2s}
+.vbtn:hover{border-color:var(--line-2);background:rgba(150,170,255,.08)}
+.vbtn:active{transform:translateY(1px)}
+.vbtn.wide{grid-column:1/-1}
+.vbtn .no{font:16px/1 var(--f-lcd);color:var(--ink-3);letter-spacing:.04em}
+.vbtn .nm{font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.vbtn .led{width:7px;height:7px;border-radius:50%;background:#262b40;box-shadow:inset 0 0 2px rgba(0,0,0,.7)}
+.vbtn[aria-pressed="true"]{border-color:rgba(96,255,220,.5);background:rgba(60,255,210,.08)}
+.vbtn[aria-pressed="true"] .no{color:var(--lcd)}
+.vbtn[aria-pressed="true"] .led{background:#5dffd9;box-shadow:0 0 8px #5dffd9}
+.vrow .vbtn{grid-template-columns:auto 8px}
+
+/* ---------- lock-on tag that follows the latest quake on the globe ---------- */
+#tag{position:absolute;left:0;top:0;z-index:1;pointer-events:none;opacity:0;transition:opacity .4s ease;--q:#ffb15e}
+#tag.on{opacity:1}
+#tag .brk{position:absolute;left:-14px;top:-14px;width:28px;height:28px}
+#tag .brk i{position:absolute;width:7px;height:7px;border:1.5px solid var(--q);filter:drop-shadow(0 0 4px var(--q))}
+#tag .brk i:nth-child(1){left:0;top:0;border-right:0;border-bottom:0}
+#tag .brk i:nth-child(2){right:0;top:0;border-left:0;border-bottom:0}
+#tag .brk i:nth-child(3){left:0;bottom:0;border-right:0;border-top:0}
+#tag .brk i:nth-child(4){right:0;bottom:0;border-left:0;border-top:0}
+#tag.pop .brk{animation:lockOn .7s cubic-bezier(.2,.8,.2,1)}
+@keyframes lockOn{from{transform:scale(2.6) rotate(45deg);opacity:0}to{transform:none;opacity:1}}
+#tag .lead{position:absolute;left:9px;top:-8px;width:46px;height:1px;background:linear-gradient(90deg,var(--q),rgba(255,255,255,.15));transform-origin:0 0;transform:rotate(-40deg)}
+#tag .box{position:absolute;left:44px;top:-62px;white-space:nowrap;padding:5px 10px 6px;border-left:2px solid var(--q);background:linear-gradient(90deg,rgba(3,4,10,.8),rgba(3,4,10,.2));font:500 12px/1.3 var(--f-body);color:var(--ink);text-shadow:0 1px 8px rgba(0,0,0,.9)}
+#tag .box b{display:block;font:600 18px/1.1 var(--f-mono);color:var(--q);text-shadow:0 0 12px var(--q)}
+#tag.flip .lead{left:-9px;transform:rotate(220deg)}
+#tag.flip .box{left:auto;right:44px;border-left:0;border-right:2px solid var(--q);background:linear-gradient(270deg,rgba(3,4,10,.8),rgba(3,4,10,.2));text-align:right}
+#tag.pop .box{animation:tagIn .55s cubic-bezier(.2,.8,.2,1) .12s both}
+@keyframes tagIn{from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0 0 0 0)}}
+#tag.flip.pop .box{animation-name:tagInL}
+@keyframes tagInL{from{clip-path:inset(0 0 0 100%)}to{clip-path:inset(0 0 0 0)}}
+
+/* ---------- great quakes: the whole console shakes ---------- */
+#hud.shake{animation:hudShake var(--dur,1.2s) linear both}
+@keyframes hudShake{
+  0%{transform:none}
+  4%{transform:translate(calc(var(--amp)*-1),calc(var(--amp)*.6))}
+  9%{transform:translate(var(--amp),calc(var(--amp)*-.8))}
+  14%{transform:translate(calc(var(--amp)*-.85),calc(var(--amp)*-.45))}
+  20%{transform:translate(calc(var(--amp)*.8),calc(var(--amp)*.7))}
+  28%{transform:translate(calc(var(--amp)*-.6),calc(var(--amp)*.3))}
+  38%{transform:translate(calc(var(--amp)*.45),calc(var(--amp)*-.45))}
+  52%{transform:translate(calc(var(--amp)*-.3),calc(var(--amp)*.22))}
+  68%{transform:translate(calc(var(--amp)*.18),calc(var(--amp)*-.12))}
+  84%{transform:translate(calc(var(--amp)*-.08),calc(var(--amp)*.06))}
+  100%{transform:none}
+}
+#caption.great.show{transition-delay:.28s}
+#caption.great .cap-mag{font-size:clamp(56px,10vw,108px);animation:capGlitch 1.5s steps(1,end) .28s 1 both}
+@keyframes capGlitch{0%{text-shadow:-5px 0 #ff2a6d,5px 0 #2af0ff,0 0 40px var(--q)}10%{text-shadow:4px 0 #ff2a6d,-4px 0 #2af0ff,0 0 70px var(--q)}22%{text-shadow:-3px 0 #ff2a6d,3px 0 #2af0ff,0 0 90px var(--q)}36%{text-shadow:2px 0 #ff2a6d,-2px 0 #2af0ff,0 0 70px var(--q)}52%,100%{text-shadow:0 0 40px var(--q),0 0 90px var(--q)}}
+
+/* ---------- caption extras ---------- */
+.cap-eye{font:500 11px/1 var(--f-mono);letter-spacing:.32em;color:var(--q);margin-bottom:8px;text-shadow:0 0 12px var(--q)}
+.cap-line{height:1px;width:0;margin:12px auto 0;background:linear-gradient(90deg,transparent,var(--q),#fff,var(--q),transparent);box-shadow:0 0 14px var(--q);transition:width 1s cubic-bezier(.2,.8,.2,1) .2s}
+#caption.show .cap-line{width:min(440px,72%)}
+
+/* ---------- gate: a running heart trace ---------- */
+.gate-ecg{display:block;width:min(520px,82vw);height:46px;overflow:visible;margin-top:-4px}
+.gate-ecg path{fill:none;stroke-linecap:round;stroke-linejoin:round}
+.gate-ecg .base{stroke:rgba(255,61,110,.2);stroke-width:1.4}
+.gate-ecg .run{stroke:#ff6d93;stroke-width:2.4;stroke-dasharray:.14 .86;stroke-dashoffset:1;animation:ecgRun 2.4s linear infinite;filter:drop-shadow(0 0 6px rgba(255,61,110,.95))}
+@keyframes ecgRun{to{stroke-dashoffset:0}}
+.gate-voice{font:500 13px/1.6 var(--f-body)!important;color:var(--ink-2)!important}
+.gate-voice b{font:19px/1 var(--f-lcd);letter-spacing:.06em;color:var(--lcd);text-shadow:0 0 8px rgba(110,255,230,.7);font-weight:400;margin:0 3px}
 
 /* ---------- mobile ---------- */
 @media (max-width:979px){
@@ -219,13 +319,26 @@ h3{margin:0;font:500 15px/1.3 var(--f-display);text-wrap:balance}
   .sheet-head span{font:500 12px var(--f-mono);letter-spacing:.12em;color:var(--ink-3)}
   .sheet-head button{background:none;border:1px solid var(--line-2);border-radius:999px;width:32px;height:32px;cursor:pointer;color:var(--ink)}
   #caption{top:20%}
+  .bpm{min-width:0;flex:none;grid-template-columns:auto auto}
+  #ecg{height:20px;margin-top:5px}
+  .lcd{width:auto;max-width:200px;padding:4px 9px 5px;align-items:center}
+  .lcd-num{font-size:20px}
+  .lcd-name,.lcd-sub{display:none}
+  .lcd-ko{display:block}
+  .lcd.big .lcd-name,.lcd.big .lcd-sub{display:flex}
+  .lcd.big .lcd-name{display:block}
+  .kbd-arrow{width:30px}
+  #tag .box{font-size:11px;padding:4px 8px}
+  #tag .box b{font-size:15px}
 }
 @media (max-width:420px){.chips .pill.scene{max-width:62vw;overflow:hidden;text-overflow:ellipsis}}
-@media (prefers-reduced-motion:reduce){#gate,#caption,#toast,#panel{transition:none}.pill.live.waiting .dot{animation:none}}
+@media (prefers-reduced-motion:reduce){#gate,#caption,#toast,#panel,.cap-line{transition:none}#hud.shake,#caption.great .cap-mag,.pill.live.waiting .dot,.gate-ecg .run,.lcd.loading #lcdSub,.lcd.loading #lcdBigSub,#tag.pop .brk,#tag.pop .box{animation:none}}
 </style>
 
 <div id="app">
   <canvas id="gl" aria-label="실제 지진 위치가 표시된 3D 지구. 끌어서 돌리고, 지진 점을 누르면 그 소리를 들을 수 있어요."></canvas>
+
+  <div id="tag" aria-hidden="true"><span class="brk"><i></i><i></i><i></i><i></i></span><span class="lead"></span><span class="box"><b id="tagMag"></b><span id="tagTxt"></span></span></div>
 
   <div id="hud">
     <div id="topbar">
@@ -237,6 +350,7 @@ h3{margin:0;font:500 15px/1.3 var(--f-display);text-wrap:balance}
       <div class="bpm glass" id="bpmBox" aria-label="지구의 심박수">
         <svg class="heart" id="heartIcon" viewBox="0 0 32 29" aria-hidden="true"><path d="M16 28.5C6 21 0 15.5 0 8.6 0 3.6 3.9 0 8.6 0c3 0 5.8 1.6 7.4 4.2C17.6 1.6 20.4 0 23.4 0 28.1 0 32 3.6 32 8.6 32 15.5 26 21 16 28.5z"/></svg>
         <div class="bpm-num"><span id="bpmNum">--</span><small>BPM</small></div>
+        <canvas id="ecg" aria-hidden="true"></canvas>
         <div class="bpm-sub"><span>지구의 맥박</span><b id="bpmMood">평온해요</b></div>
       </div>
     </div>
@@ -245,6 +359,7 @@ h3{margin:0;font:500 15px/1.3 var(--f-display);text-wrap:balance}
       <div class="sheet-head"><span>EARTH BPM</span><button id="sheetClose" aria-label="메뉴 닫기">✕</button></div>
       <nav class="tabs" role="tablist">
         <button role="tab" id="tab-time" aria-controls="pane-time" aria-selected="true" data-tab="time">시간 여행</button>
+        <button role="tab" id="tab-voice" aria-controls="pane-voice" aria-selected="false" data-tab="voice">악기</button>
         <button role="tab" id="tab-adopt" aria-controls="pane-adopt" aria-selected="false" data-tab="adopt">내 지진대</button>
         <button role="tab" id="tab-diary" aria-controls="pane-diary" aria-selected="false" data-tab="diary">지구 일기</button>
         <button role="tab" id="tab-sound" aria-controls="pane-sound" aria-selected="false" data-tab="sound">소리 지도</button>
@@ -255,6 +370,7 @@ h3{margin:0;font:500 15px/1.3 var(--f-display);text-wrap:balance}
         <div class="scene-list" id="sceneList"></div>
         <p class="memo">과거 기록에는 많은 사람의 아픔이 함께 남아 있어요. 그날을 기억하는 마음으로 들어주세요.</p>
       </div>
+      <div class="pane" id="pane-voice" role="tabpanel" aria-labelledby="tab-voice" hidden></div>
       <div class="pane" id="pane-adopt" role="tabpanel" aria-labelledby="tab-adopt" hidden></div>
       <div class="pane" id="pane-diary" role="tabpanel" aria-labelledby="tab-diary" hidden></div>
       <div class="pane" id="pane-sound" role="tabpanel" aria-labelledby="tab-sound" hidden>
@@ -262,7 +378,7 @@ h3{margin:0;font:500 15px/1.3 var(--f-display);text-wrap:balance}
         <div><div class="eyebrow">규모 → 음높이</div></div>
         <p class="lede" style="margin-top:-6px">클수록 낮은 음이에요. 화음이 어긋나지 않게 라단조 5음 음계에 맞췄어요.</p>
         <div class="scale" id="scaleRow"></div>
-        <div><div class="eyebrow">깊이 → 음색</div></div>
+        <div><div class="eyebrow" id="depthEyebrow">깊이 → 음색</div></div>
         <div class="depthbar" aria-hidden="true"></div>
         <div class="depthticks"><span>0</span><span>20</span><span>100</span><span>300</span><span>700 km</span></div>
         <div class="voice-list" id="voiceList"></div>
@@ -294,6 +410,11 @@ h3{margin:0;font:500 15px/1.3 var(--f-display);text-wrap:balance}
         </div>
         <div class="deck-btns">
           <button id="menuBtn" class="chip only-mobile" aria-expanded="false">시간 여행 · 메뉴</button>
+          <div class="kbd" role="group" aria-label="악기">
+            <button class="kbd-arrow" id="voicePrev" aria-label="이전 악기">◀</button>
+            <button class="lcd" id="lcd" aria-label="악기 고르기"><span class="lcd-num" id="lcdNum">000</span><span class="lcd-name" id="lcdName">EARTH ORCH</span><span class="lcd-ko" id="lcdKo">지구 오케스트라</span><span class="lcd-sub"><span id="lcdSub">지구 오케스트라</span><span class="lcd-beat" id="lcdBeat">♥ HEART</span></span></button>
+            <button class="kbd-arrow" id="voiceNext" aria-label="다음 악기">▶</button>
+          </div>
           <button id="speedBtn" class="chip" title="재생 속도">보통 속도</button>
           <button id="xrayBtn" class="chip" aria-pressed="false" title="지구를 투명하게 해서 지진이 난 깊이를 봐요">지구 속 보기</button>
           <button id="followBtn" class="chip" aria-pressed="true" title="카메라가 지진을 따라가요">따라가기</button>
@@ -303,7 +424,7 @@ h3{margin:0;font:500 15px/1.3 var(--f-display);text-wrap:balance}
     </footer>
   </div>
 
-  <div id="caption" aria-live="polite"><div class="cap-mag" id="capMag"></div><div class="cap-title" id="capTitle"></div><div class="cap-sub" id="capSub"></div></div>
+  <div id="caption" aria-live="polite"><div class="cap-eye" id="capEye"></div><div class="cap-mag" id="capMag"></div><div class="cap-title" id="capTitle"></div><div class="cap-sub" id="capSub"></div><div class="cap-line"></div></div>
   <div id="toast" role="status"></div>
   <div id="pickHint" class="pill" hidden>지구 위 원하는 곳을 눌러 입양하세요</div>
 
@@ -311,8 +432,10 @@ h3{margin:0;font:500 15px/1.3 var(--f-display);text-wrap:balance}
     <div class="gate-card">
       <div class="gate-eyebrow">USGS 실제 지진 기록 · 3D 지구 · 입체 음향</div>
       <h1 id="gateTitle">Earth<b>BPM</b></h1>
+      <svg class="gate-ecg" viewBox="0 0 520 48" aria-hidden="true"><path class="base" pathLength="1" d="M0 30H150l8-5 8 5h20l5 4 9-30 9 38 6-12h22q14-11 28 0h36l8-5 8 5h20l5 4 9-30 9 38 6-12h22q14-11 28 0h66"/><path class="run" pathLength="1" d="M0 30H150l8-5 8 5h20l5 4 9-30 9 38 6-12h22q14-11 28 0h36l8-5 8 5h20l5 4 9-30 9 38 6-12h22q14-11 28 0h66"/></svg>
       <p id="gateLede">지난 24시간 동안 지구가 몸을 떤 순간들을 음표로 바꿔, 지구의 심장 소리로 들려드려요.</p>
       <p class="now-bpm" id="gateBpm"></p>
+      <p class="gate-voice" id="gateVoice"></p>
       <div class="gate-actions">
         <button id="startBtn" class="primary"><svg viewBox="0 0 32 29" aria-hidden="true"><path d="M16 28.5C6 21 0 15.5 0 8.6 0 3.6 3.9 0 8.6 0c3 0 5.8 1.6 7.4 4.2C17.6 1.6 20.4 0 23.4 0 28.1 0 32 3.6 32 8.6 32 15.5 26 21 16 28.5z"/></svg>심장 소리 듣기</button>
         <button id="silentBtn" class="ghost">소리 없이 보기</button>
@@ -438,10 +561,10 @@ function depthRGB(d){
 }
 const css = (c,a=1) => `rgba(${Math.round(c[0]*255)},${Math.round(c[1]*255)},${Math.round(c[2]*255)},${a})`;
 const VOICES=[
-  {name:'지각의 현', range:'0–20 km', desc:'얕은 지진은 줄을 튕기듯 짧고 밝게 울려요.', depth:8},
-  {name:'맨틀의 종', range:'20–100 km', desc:'중간 깊이는 금속 종처럼 맑게 퍼져요.', depth:45},
-  {name:'깊은 합창', range:'100–300 km', desc:'더 깊어지면 여러 목소리가 겹친 듯 부드러워져요.', depth:170},
-  {name:'심연의 고래', range:'300–700 km', desc:'가장 깊은 지진은 고래 울음처럼 낮고 길게 남아요.', depth:560}
+  {name:'지각의 현', range:'0–20 km', desc:'얕은 지진은 줄을 튕기듯 짧고 밝게 울려요.', orch:'하프', odesc:'얕은 지진은 하프 줄을 뜯듯 맑게 울려요.', sdesc:'가까이서 울리듯 또렷하고 밝게 들려요.', depth:8},
+  {name:'맨틀의 종', range:'20–100 km', desc:'중간 깊이는 금속 종처럼 맑게 퍼져요.', orch:'비브라폰', odesc:'중간 깊이는 비브라폰처럼 은은하게 떨려요.', sdesc:'조금 멀리서 울리듯 넓게 퍼져요.', depth:45},
+  {name:'깊은 합창', range:'100–300 km', desc:'더 깊어지면 여러 목소리가 겹친 듯 부드러워져요.', orch:'합창', odesc:'더 깊어지면 합창단이 부드럽게 받아 불러요.', sdesc:'깊은 곳에서 울리듯 부드럽고 길게 남아요.', depth:170},
+  {name:'심연의 고래', range:'300–700 km', desc:'가장 깊은 지진은 고래 울음처럼 낮고 길게 남아요.', orch:'첼로', odesc:'가장 깊은 지진은 첼로가 낮고 길게 그어요.', sdesc:'아주 깊은 곳에서 울리듯 어둡고 길게 남아요.', depth:560}
 ];
 const voiceOf = d => d<20?0:d<100?1:d<300?2:3;
 const PENTA=[0,3,5,7,10];
@@ -453,6 +576,44 @@ const noteName = n => NOTE[n%12]+(Math.floor(n/12)-1);
 const noteSol = n => SOL[NOTE[n%12][0]];
 const mtof = n => 440*Math.pow(2,(n-69)/12);
 const DEPTH_EXAG=4;
+const magClass = m => m>=8?'GREAT EARTHQUAKE':m>=7?'MAJOR EARTHQUAKE':m>=6?'STRONG EARTHQUAKE':m>=5?'MODERATE EARTHQUAKE':m>=4?'LIGHT EARTHQUAKE':m>=3?'MINOR EARTHQUAKE':'MICRO EARTHQUAKE';
+
+/* ================= Instruments: numbered voices like an arranger keyboard ================= */
+const VMETA = (DATA.voices && DATA.voices.voices) ? DATA.voices : {notes:[],lead:0.12,voices:{}};
+const VOICE_LIST=[
+  {no:0,  key:'orch',     en:'EARTH ORCH',   ko:'지구 오케스트라', fam:'오케스트라', desc:'깊이마다 악기가 달라요. 얕은 지진은 하프, 중간은 비브라폰, 깊어지면 합창과 첼로가 받아요.'},
+  {no:1,  key:'piano',    en:'GRAND PIANO',  ko:'그랜드 피아노', fam:'건반', desc:'지진 하나하나가 건반 하나예요. 가장 익숙하고 맑은 소리.'},
+  {no:2,  key:'epiano',   en:'E.PIANO',      ko:'일렉트릭 피아노', short:'일렉 피아노', fam:'건반', desc:'로즈 피아노처럼 둥글고 따뜻하게 울려요.'},
+  {no:3,  key:'harpsi',   en:'CEMBALO',      ko:'쳄발로', fam:'건반', desc:'하프시코드라고도 불러요. 바로크 시대 건반으로, 줄을 뜯어 찰랑찰랑 울려요.'},
+  {no:4,  key:'organ',    en:'PIPE ORGAN',   ko:'파이프 오르간', fam:'건반', desc:'성당의 파이프 오르간처럼 꽉 차게 이어져요.'},
+  {no:5,  key:'celesta',  en:'CELESTA',      ko:'첼레스타', fam:'말렛·벨', desc:'호두까기 인형의 사탕 요정 춤에 나오는 반짝이는 소리예요.'},
+  {no:6,  key:'musicbox', en:'MUSIC BOX',    ko:'오르골', fam:'말렛·벨', desc:'태엽 오르골처럼 작고 맑게 울려요.'},
+  {no:7,  key:'vibes',    en:'VIBRAPHONE',   ko:'비브라폰', fam:'말렛·벨', desc:'금속 건반이 은은하게 떨리며 오래 남아요.'},
+  {no:8,  key:'marimba',  en:'MARIMBA',      ko:'마림바', fam:'말렛·벨', desc:'나무 건반을 두드리는 통통 튀는 소리예요.'},
+  {no:9,  key:'bells',    en:'CHIMES',       ko:'차임벨', fam:'말렛·벨', desc:'튜블러 벨이라고도 해요. 교회 종처럼 크고 길게 울려요.'},
+  {no:10, key:'kalimba',  en:'KALIMBA',      ko:'칼림바', fam:'말렛·벨', desc:'엄지로 쇠막대를 튕기는 아프리카 악기의 포근한 소리예요.'},
+  {no:11, key:'guitar',   en:'NYLON GUITAR', ko:'클래식 기타', fam:'현악기', desc:'나일론 줄을 손가락으로 뜯는 소리예요.'},
+  {no:12, key:'harp',     en:'HARP',         ko:'하프', fam:'현악기', desc:'물결처럼 흐르는 하프 줄 소리예요.'},
+  {no:13, key:'strings',  en:'STRINGS',      ko:'현악 합주', fam:'현악기', desc:'바이올린부터 콘트라베이스까지 현악기들이 함께 감싸요.'},
+  {no:14, key:'cello',    en:'CELLO',        ko:'첼로', fam:'현악기', desc:'낮고 깊은 활 소리예요. 깊은 지진과 특히 잘 어울려요.'},
+  {no:15, key:'brass',    en:'BRASS',        ko:'브라스', fam:'관악기·목소리', desc:'트럼펫·트롬본·호른이 함께 부는 힘찬 소리예요.'},
+  {no:16, key:'trumpet',  en:'TRUMPET',      ko:'트럼펫', fam:'관악기·목소리', desc:'팡파르처럼 또렷하게 울려요.'},
+  {no:17, key:'flute',    en:'FLUTE',        ko:'플루트', fam:'관악기·목소리', desc:'숨결이 섞인 가볍고 맑은 소리예요.'},
+  {no:18, key:'choir',    en:'CHOIR AAHS',   ko:'합창', fam:'관악기·목소리', desc:'여러 목소리가 "아-" 하고 노래해요.'},
+  {no:99, key:'synth',    en:'SPACE SYNTH',  ko:'우주 신스', fam:'전자음', desc:'처음 들려드린 전자음이에요. 깊이마다 신스 음색이 달라져요. 박자도 "전자 킥"으로 바꾸면 처음 소리 그대로예요.'}
+];
+const ORCH=['harp','vibes','choir','cello'];
+const BEATS=[
+  {key:'soft',    en:'HEART',   ko:'청진기 심장', desc:'청진기로 듣는 것처럼 둥근 심장 소리'},
+  {key:'timpani', en:'TIMPANI', ko:'팀파니', desc:'오케스트라의 큰북으로 쿵-쿵'},
+  {key:'bass',    en:'C.BASS',  ko:'콘트라베이스', desc:'낮은 줄을 뜯어 둥-둥'},
+  {key:'synth',   en:'E.KICK',  ko:'전자 킥', desc:'처음 들려드린 전자음 심장'},
+  {key:'off',     en:'NO BEAT', ko:'박자 끄기', desc:'지진 소리만 들어요'}
+];
+// demo phrase in A minor pentatonic: [midi, seconds from start, magnitude]
+const DEMO=[[57,0,3.6],[60,.24,3.2],[62,.48,3.3],[64,.72,3.5],[67,1.0,3.9],[64,1.48,3.2],[62,1.72,3.1],[60,1.96,3.3],[62,2.4,3.2],[57,2.64,3.6],[45,3.1,4.6],[69,3.1,3.0]];
+const pad3 = n => String(n).padStart(3,'0');
+function voiceLabel(e){ const k=Voice.cur.key; return k==='synth'? VOICES[e.voice].name : k==='orch'? VOICES[e.voice].orch : Voice.cur.ko; }
 
 function latLonToVec(lat,lon,r){
   const phi=(90-lat)*DEG, th=(lon+180)*DEG;
@@ -558,7 +719,7 @@ const Sound = {
     const master=this.master=ctx.createGain(); master.gain.value=0;
     const comp=ctx.createDynamicsCompressor(); comp.threshold.value=-18; comp.knee.value=12; comp.ratio.value=4; comp.attack.value=0.005; comp.release.value=0.3;
     const lim=ctx.createDynamicsCompressor(); lim.threshold.value=-2.5; lim.knee.value=0; lim.ratio.value=20; lim.attack.value=0.001; lim.release.value=0.12;
-    const an=this.analyser=ctx.createAnalyser(); an.fftSize=1024; an.smoothingTimeConstant=0.3; this.buf=new Float32Array(an.fftSize);
+    const an=this.analyser=ctx.createAnalyser(); an.fftSize=1024; an.smoothingTimeConstant=0.3; an.minDecibels=-92; an.maxDecibels=-22; this.buf=new Float32Array(an.fftSize); this.fbuf=new Uint8Array(an.frequencyBinCount);
     master.connect(comp); comp.connect(lim); lim.connect(an); an.connect(ctx.destination);
     this.dry=ctx.createGain(); this.dry.connect(master);
     this.revIn=ctx.createGain(); const rev=ctx.createConvolver(); rev.buffer=this.makeIR(4.8); const revOut=ctx.createGain(); revOut.gain.value=0.9;
@@ -572,8 +733,12 @@ const Sound = {
     this.hb=ctx.createGain(); this.hb.gain.value=0.95; const hbLp=ctx.createBiquadFilter(); hbLp.type='lowpass'; hbLp.frequency.value=170; hbLp.Q.value=0.9;
     const sat=ctx.createWaveShaper(); sat.curve=this.satCurve(2.4); sat.oversample='2x';
     this.hb.connect(hbLp); hbLp.connect(sat); sat.connect(master); const hbRev=ctx.createGain(); hbRev.gain.value=0.14; sat.connect(hbRev); hbRev.connect(this.revIn);
+    // soft heart: a rounder, stethoscope-like thud; beat bus: sampled timpani / double bass
+    this.soft=ctx.createGain(); const sSat=ctx.createWaveShaper(); sSat.curve=this.satCurve(1.6); const sLp=ctx.createBiquadFilter(); sLp.type='lowpass'; sLp.frequency.value=260; sLp.Q.value=0.6;
+    this.soft.connect(sSat); sSat.connect(sLp); sLp.connect(master); const sRev=ctx.createGain(); sRev.gain.value=0.1; sLp.connect(sRev); sRev.connect(this.revIn);
+    this.beatBus=ctx.createGain(); this.beatBus.connect(master); const bRev=ctx.createGain(); bRev.gain.value=0.16; this.beatBus.connect(bRev); bRev.connect(this.revIn);
     this.makeDrone();
-    this.ready=true; return true;
+    this.ready=true; Samples.decodeAll(); return true;
   },
   makeIR(sec){
     const ctx=this.ctx, sr=ctx.sampleRate, len=Math.floor(sr*sec), b=ctx.createBuffer(2,len,sr);
@@ -598,18 +763,39 @@ const Sound = {
     if(!this.ready) return; const t=this.ctx.currentTime;
     if(this.ctx.state!=='running') this.ctx.resume();
     this.master.gain.cancelScheduledValues(t); this.master.gain.setValueAtTime(this.master.gain.value,t); this.master.gain.linearRampToValueAtTime(this.muted?0:this.vol,t+1.4);
-    this.droneGain.gain.setTargetAtTime(0.05,t,1.6);
+    this.droneGain.gain.setTargetAtTime(this.droneLevel(0.2),t,1.6);
     // iOS unlock: a silent buffer
     const s=this.ctx.createBufferSource(); s.buffer=this.ctx.createBuffer(1,1,22050); s.connect(this.ctx.destination); s.start();
   },
   setMuted(m){ this.muted=m; if(!this.ready) return; const t=this.ctx.currentTime; this.master.gain.cancelScheduledValues(t); this.master.gain.setTargetAtTime(m?0:this.vol,t,0.08); },
-  setActivity(a){ if(!this.ready) return; const t=this.ctx.currentTime; this.droneLp.frequency.setTargetAtTime(150+a*560,t,0.9); this.droneGain.gain.setTargetAtTime(0.04+a*0.05,t,0.9); },
-  duck(t,dur){ if(!this.ready) return; const g=this.droneGain.gain; g.setTargetAtTime(0.008,t,0.04); g.setTargetAtTime(0.055,t+dur,1.4); },
+  setActivity(a){ if(!this.ready) return; const t=this.ctx.currentTime, syn=Voice.cur.key==='synth'; this.droneLp.frequency.setTargetAtTime(syn?150+a*560:110+a*260,t,0.9); this.droneGain.gain.setTargetAtTime(this.droneLevel(a),t,0.9); },
+  droneLevel(a){ return Voice.cur.key==='synth' ? 0.04+a*0.05 : 0.022+a*0.03; },
+  duck(t,dur){ if(!this.ready) return; const g=this.droneGain.gain; g.setTargetAtTime(0.008,t,0.04); g.setTargetAtTime(this.droneLevel(0.3),t+dur,1.4); },
   live(){ return this.ready && !this.muted && this.ctx.state==='running'; },
   at(v){ return this.ctx.currentTime + Math.max(0, v - vtime) + 0.004; },
   lat(){ return this.live() ? Math.min(0.2, this.ctx.outputLatency || this.ctx.baseLatency || 0) : 0; },
   env(p,t,a,peak,end){ p.setValueAtTime(0.0001,t); p.exponentialRampToValueAtTime(Math.max(0.0002,peak),t+a); p.exponentialRampToValueAtTime(0.0001,end); },
-  beat(t,strength){ this.thump(t,62,0.85*strength,0.3); this.thump(t+0.17,71,0.55*strength,0.26); },
+  beat(t,strength){
+    const b=Voice.beat;
+    if(b==='off') return;
+    if(b==='synth'){ this.thump(t,62,0.85*strength,0.3); this.thump(t+0.17,71,0.55*strength,0.26); return; }
+    const S=(b==='timpani'||b==='bass') && Samples.get(b);
+    if(S){ // lub on A1, dub on E2
+      const tim=b==='timpani', o={dur:tim?1.1:0.5,att:0.002,lp:tim?2600:1800};
+      this.sample(this.beatBus,S,33,(tim?0.46:0.44)*strength,t,4,0,o); this.sample(this.beatBus,S,40,(tim?0.28:0.28)*strength,t+0.19,4,0,{...o,dur:tim?0.8:0.4}); return;
+    }
+    this.lub(t,48,0.9*strength,0.24); this.lub(t+0.2,58,0.55*strength,0.18);
+  },
+  lub(t,f,amp,dur){ // soft heart: a pitched thud plus a muffled knock, no click
+    const ctx=this.ctx, o=ctx.createOscillator(), g=ctx.createGain();
+    o.frequency.setValueAtTime(f*1.4,t); o.frequency.exponentialRampToValueAtTime(f,t+0.045);
+    g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(amp,t+0.016); g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+    o.connect(g); g.connect(this.soft); o.start(t); o.stop(t+dur+0.05);
+    const o2=ctx.createOscillator(), g2=ctx.createGain(); o2.frequency.setValueAtTime(f*2.8,t); o2.frequency.exponentialRampToValueAtTime(f*2,t+0.045); g2.gain.value=0.3; o2.connect(g2); g2.connect(g); o2.start(t); o2.stop(t+dur+0.05); // an overtone so small speakers can hear it
+    const n=ctx.createBufferSource(); n.buffer=this.noise; const lp=ctx.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=220; const ng=ctx.createGain();
+    ng.gain.setValueAtTime(0.0001,t); ng.gain.exponentialRampToValueAtTime(amp*0.5,t+0.01); ng.gain.exponentialRampToValueAtTime(0.0001,t+0.09);
+    n.connect(lp); lp.connect(ng); ng.connect(this.soft); n.start(t,Math.random()); n.stop(t+0.12);
+  },
   thump(t,f,amp,dur){
     const ctx=this.ctx, o=ctx.createOscillator(), g=ctx.createGain();
     o.frequency.setValueAtTime(f*2.2,t); o.frequency.exponentialRampToValueAtTime(f,t+0.035); o.frequency.exponentialRampToValueAtTime(f*0.6,t+dur);
@@ -626,15 +812,32 @@ const Sound = {
     out.connect(muff); let tail=muff;
     if(ctx.createStereoPanner){ const pn=ctx.createStereoPanner(); pn.pan.value=clamp(opt.pan||0,-0.95,0.95); muff.connect(pn); tail=pn; nodes.push(pn); }
     tail.connect(this.dry);
-    const rs=ctx.createGain(); rs.gain.value=[0.28,0.5,0.72,0.95][v]+far*0.3; tail.connect(rs); rs.connect(this.revIn);
-    const ds=ctx.createGain(); ds.gain.value=[0.22,0.14,0.06,0.04][v]; tail.connect(ds); ds.connect(this.dlyIn);
+    const syn=Voice.cur.key==='synth', S=syn? null : Samples.get(Voice.keyFor(v));
+    const rs=ctx.createGain(); rs.gain.value=(syn?[0.28,0.5,0.72,0.95]:[0.22,0.4,0.6,0.85])[v]+far*0.3; tail.connect(rs); rs.connect(this.revIn);
+    const ds=ctx.createGain(); ds.gain.value=(syn?[0.22,0.14,0.06,0.04]:[0.07,0.05,0.03,0.02])[v]; tail.connect(ds); ds.connect(this.dlyIn);
     nodes.push(out,muff,rs,ds);
-    let end=[this.pluck,this.bell,this.choir,this.abyss][v].call(this,out,f,amp,t,m);
+    // a sampled instrument when one is chosen and loaded; the synth voices otherwise (and as a fallback)
+    let end= S ? this.sample(out,S,e.midi,amp,t,m,v) : [this.pluck,this.bell,this.choir,this.abyss][v].call(this,out,f,amp,t,m);
     if(m>=5.2) end=Math.max(end,this.boom(amp,t,m,e));
     if(m>=7) end=Math.max(end,this.aura(t,m));
+    if(m>=7.5) this.crack(t,m);
     this.voices++;
     setTimeout(()=>{ this.voices--; for(const n of nodes){ try{ n.disconnect(); }catch(_){ } } }, Math.max(0,(end-ctx.currentTime)*1000)+600);
     return end;
+  },
+  // one note from a voice sprite: nearest recorded note, onset-trimmed, level-matched; deeper quakes swell in slower and darker
+  sample(out,S,midi,amp,t,m,v,o={}){
+    const ctx=this.ctx, N=S.notes; let i=-1,bd=1e9;
+    for(let k=0;k<N.length;k++){ if(!S.ok[k]) continue; const dd=Math.abs(N[k]-midi); if(dd<bd){ bd=dd; i=k; } }
+    if(i<0) return t;
+    const rate=Math.pow(2,(midi-N[i])/12), off=S.on[i], avail=(S.end[i]-off)/rate;
+    const dur=Math.max(0.25,Math.min(avail, o.dur || clamp(0.9+0.3*Math.max(0,m)+0.35*v,1,7)));
+    const att=o.att!=null? o.att : [0.002,0.004,0.025,0.07][v], rel=Math.min(0.35,dur*0.3), pk=Math.max(0.0001,amp*S.gain[i]*(o.gain||1));
+    const src=ctx.createBufferSource(); src.buffer=S.buf; if(rate!==1) src.playbackRate.value=rate;
+    const lp=ctx.createBiquadFilter(); lp.type='lowpass'; lp.Q.value=0.4; lp.frequency.value=o.lp || clamp(900*Math.pow(18,clamp(0.45+0.08*m-0.12*v,0,1)),500,16000);
+    const g=ctx.createGain(); g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(pk,t+att); g.gain.setValueAtTime(pk,t+dur-rel); g.gain.linearRampToValueAtTime(0,t+dur);
+    src.connect(lp); lp.connect(g); g.connect(out); src.start(t,off,dur*rate+0.02); src.stop(t+dur+0.05);
+    return t+dur;
   },
   osc(type,f,t,stop){ const o=this.ctx.createOscillator(); o.type=type; o.frequency.value=f; o.start(t); o.stop(stop); return o; },
   pluck(out,f,amp,t,m){
@@ -688,6 +891,11 @@ const Sound = {
     }
     return t+dur;
   },
+  crack(t,m){ // the sky splitting before the rumble of a great quake
+    const ctx=this.ctx, n=ctx.createBufferSource(); n.buffer=this.noise; const bp=ctx.createBiquadFilter(); bp.type='bandpass'; bp.Q.value=0.9; bp.frequency.setValueAtTime(3800,t); bp.frequency.exponentialRampToValueAtTime(140,t+0.9);
+    const g=ctx.createGain(), a=Math.min(0.5,0.2+(m-7.5)*0.15); g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(a,t+0.008); g.gain.exponentialRampToValueAtTime(0.0001,t+1.1);
+    n.connect(bp); bp.connect(g); g.connect(this.dry); const r=ctx.createGain(); r.gain.value=0.9; g.connect(r); r.connect(this.revIn); n.start(t,Math.random()); n.stop(t+1.2);
+  },
   aura(t,m){ // the air after a great quake: noise shimmer + a high open chord
     const ctx=this.ctx, dur=7, stop=t+dur+0.1;
     const n=ctx.createBufferSource(); n.buffer=this.noise; n.loop=true; const hp=ctx.createBiquadFilter(); hp.type='highpass'; hp.frequency.value=4200;
@@ -701,30 +909,108 @@ const Sound = {
     if(ctx.createStereoPanner){ const pn=ctx.createStereoPanner(); pn.pan.value=clamp(pan||0,-0.9,0.9); pn.connect(this.dry); out=pn; }
     [[1318.5,0],[1975.5,0.1]].forEach(([f,d])=>{ const tt=t+d, o=this.osc('sine',f,tt,tt+0.7), g=ctx.createGain(); this.env(g.gain,tt,0.004,0.07,tt+0.65); o.connect(g); g.connect(out); const r=ctx.createGain(); r.gain.value=0.7; g.connect(r); r.connect(this.revIn); });
   },
-  motif(e,t){
-    const ctx=this.ctx, k=magStep(e.mag);
+  motif(e,t){ // your adopted region's three-note call, played on the chosen instrument (a music box for the orchestra)
+    const ctx=this.ctx, k=magStep(e.mag), key=Voice.cur.key, S=key==='synth'? null : Samples.get(key==='orch'?'musicbox':key);
     [5,7,10].forEach((d,j)=>{
-      const f=mtof(Math.min(98,stepMidi(k+d))), tt=t+0.12*j+0.08;
-      const o=this.osc('sine',f,tt,tt+1.3), o2=this.osc('sine',f*4,tt,tt+1.3), g=ctx.createGain(), g2=ctx.createGain(); g2.gain.value=0.16;
-      this.env(g.gain,tt,0.005,0.14,tt+1.2); o.connect(g); o2.connect(g2); g2.connect(g); g.connect(this.dry);
-      const s=ctx.createGain(); s.gain.value=0.5; g.connect(s); s.connect(this.revIn); s.connect(this.dlyIn);
+      const n=Math.min(98,stepMidi(k+d)), f=mtof(n), tt=t+0.12*j+0.08;
+      const g=ctx.createGain(); g.connect(this.dry); const s=ctx.createGain(); s.gain.value=0.5; g.connect(s); s.connect(this.revIn); s.connect(this.dlyIn);
+      if(S){ this.sample(g,S,n,0.2,tt,3,0,{dur:1.3}); return; }
+      const o=this.osc('sine',f,tt,tt+1.3), o2=this.osc('sine',f*4,tt,tt+1.3), ge=ctx.createGain(), g2=ctx.createGain(); g2.gain.value=0.16;
+      this.env(ge.gain,tt,0.005,0.14,tt+1.2); o.connect(ge); o2.connect(g2); g2.connect(ge); ge.connect(g);
+    });
+  }
+};
+
+/* ================= Instrument samples ================= */
+// voices/<key>.mp3 holds one recorded note per slot (FluidR3 GM, rendered by tools/render_voices.py).
+// After decoding, each note's real onset is located and its loudness evened out, so every instrument sits at the same level.
+const SAMPLE_RMS=0.24, TRIM={organ:0.75,strings:0.75,cello:0.7,choir:0.68,brass:0.78,trumpet:0.85,flute:0.8,kalimba:1.1}; // sustained voices sound louder at equal RMS
+function analyseVoice(k,b){
+  const meta=VMETA.voices[k], notes=meta.notes||VMETA.notes, slot=meta.slot, lead=VMETA.lead, sr=b.sampleRate, d=b.getChannelData(0), n=notes.length, L=d.length;
+  const on=new Float64Array(n), end=new Float64Array(n), gain=new Float32Array(n), ok=new Uint8Array(n);
+  for(let i=0;i<n;i++){
+    const s0=Math.floor(i*slot*sr), fe=Math.min(L,s0+Math.floor(lead*0.4*sr)), lim=Math.min(L,s0+Math.floor((lead+0.4)*sr)), se=Math.min(L,s0+Math.floor(slot*sr));
+    let floor=0,pk=0;
+    for(let j=s0;j<fe;j++){ const x=Math.abs(d[j]); if(x>floor) floor=x; }
+    for(let j=s0;j<se;j++){ const x=Math.abs(d[j]); if(x>pk) pk=x; }
+    const thr=Math.max(floor*2.5,pk*0.03,0.001); let at=-1;
+    for(let j=fe;j<lim;j++){ if(Math.abs(d[j])>thr){ at=j; break; } }
+    on[i]= at<0 ? i*slot+lead : Math.max(i*slot, at/sr-0.003);
+    const a0=Math.floor(on[i]*sr), a1=Math.min(L,a0+Math.floor(0.5*sr)); let acc=0;
+    for(let j=a0;j<a1;j++) acc+=d[j]*d[j];
+    const rms=Math.sqrt(acc/Math.max(1,a1-a0)); ok[i]= rms>0.004 ? 1 : 0; gain[i]= ok[i] ? clamp(SAMPLE_RMS/rms,0.3,6)*(TRIM[k]||1) : 0;
+  }
+  for(let i=0;i<n;i++) end[i]= i+1<n ? on[i+1]-0.012 : Math.min(b.duration,(i+1)*slot+0.2);
+  return {buf:b,notes,on,end,gain,ok};
+}
+const Samples={
+  raw:{}, dec:{}, buf:{}, failed:{},
+  canFetch: !/^file:/.test(location.protocol), // a page opened as a local file cannot fetch its neighbours
+  want(keys){
+    for(const k of keys){
+      if(this.raw[k] || this.failed[k]) continue;
+      if(!VMETA.voices[k] || !this.canFetch){ this.failed[k]=true; continue; }
+      this.raw[k]=fetch('voices/'+k+'.mp3').then(r=>{ if(!r.ok) throw new Error('HTTP '+r.status); return r.arrayBuffer(); });
+      this.raw[k].catch(()=>{});
+    }
+    this.decodeAll();
+  },
+  decodeAll(){
+    if(!Sound.ctx) return;
+    for(const k in this.raw){
+      if(this.dec[k]) continue;
+      this.dec[k]=this.raw[k].then(ab=>new Promise((res,rej)=>{ const p=Sound.ctx.decodeAudioData(ab,res,rej); if(p&&p.catch) p.catch(rej); }))
+        .then(b=>{ this.buf[k]=analyseVoice(k,b); }, ()=>{ this.failed[k]=true; })
+        .then(()=>UI.onVoice());
+    }
+  },
+  get(k){ return this.buf[k]||null; },
+  state(keys){ if(keys.some(k=>this.failed[k])) return 'fail'; return keys.every(k=>this.buf[k]) ? 'ready' : 'loading'; },
+  ready(keys){ this.want(keys); return Promise.all(keys.map(k=>this.dec[k]||Promise.resolve())); }
+};
+const Voice={
+  i: Math.max(0,VOICE_LIST.findIndex(v=>v.key===store.get('voice','orch'))),
+  beat: BEATS.some(b=>b.key===store.get('beat','soft')) ? store.get('beat','soft') : 'soft',
+  get cur(){ return VOICE_LIST[this.i]; },
+  keyFor(depthClass){ const k=this.cur.key; return k==='orch'? ORCH[depthClass] : k; },
+  keys(){ const k=this.cur.key, out= k==='synth'? [] : k==='orch'? [...ORCH,'musicbox'] : [k]; if(this.beat==='timpani'||this.beat==='bass') out.push(this.beat); return out; },
+  set(i,quiet){ this.i=(i+VOICE_LIST.length)%VOICE_LIST.length; store.set('voice',this.cur.key); Samples.want(this.keys()); UI.onVoice(); if(!quiet) this.preview(); },
+  step(d){ ensureStarted(true); this.set(this.i+d); },
+  setBeat(k){ this.beat=k; store.set('beat',k); Samples.want(this.keys()); UI.onVoice(); },
+  _tok:0,
+  preview(demo){ // a short arpeggio (or the demo phrase) once the chosen instrument has loaded
+    const tok=++this._tok, P=this.cur;
+    Promise.race([Promise.all([Samples.ready(this.keys()),new Promise(r=>setTimeout(r,70))]), new Promise(r=>setTimeout(()=>r('late'),6000))]).then(res=>{
+      if(res==='late' || tok!==this._tok || !Sound.live()) return;
+      const t0=Sound.ctx.currentTime+0.08, orch=P.key==='orch';
+      const seq= demo ? DEMO : orch ? [[45,0,4.4],[57,.3,3.8],[64,.6,3.3],[69,.9,3.0]] : [[57,0,3.6],[60,.2,3.4],[64,.4,3.2],[69,.6,3.0]];
+      for(const [midi,dt,mag] of seq){
+        const v= orch ? (midi<50?3:midi<58?2:midi<65?1:0) : (midi<50?2:0);
+        Sound.quake({mag,depth:VOICES[v].depth,voice:v,midi},t0+dt,{pan:clamp((midi-62)/30,-0.6,0.6),far:0});
+      }
     });
   }
 };
 
 /* ================= 3D ================= */
 const RIP_N=16;
-let renderer,scene,camera,controls,composer,bloom,finalPass,ocean,dots,quakePts,atmo,core,coreGlow,shell,stars,heartTex,adoptGroup,raycaster;
+let renderer,scene,camera,controls,composer,bloom,finalPass,ocean,dots,quakePts,atmo,core,coreGlow,shell,stars,heartTex,adoptGroup,raycaster,corona,specTex;
 const U={};
 let baseDist=4.2;
-const pools={beams:[],rings:[],hearts:[]};
+const pools={beams:[],rings:[],hearts:[],arcs:[]};
 
 const FinalShader={
-  uniforms:{tDiffuse:{value:null},uTime:{value:0},uAberr:{value:0.0015},uVig:{value:0.55}},
+  uniforms:{tDiffuse:{value:null},uTime:{value:0},uAberr:{value:0.0015},uVig:{value:0.55},uAspect:{value:1},uFPos:{value:null},uFCol:{value:null},uFlash:{value:0},uShockT:{value:99},uShockA:{value:0},uAlert:{value:0}},
   vertexShader:'varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}',
-  fragmentShader:`uniform sampler2D tDiffuse;uniform float uTime,uAberr,uVig;varying vec2 vUv;
-  void main(){vec2 c=vUv-0.5;float r2=dot(c,c);vec2 o=c*uAberr*(0.6+r2*3.0);
-  vec3 col=vec3(texture2D(tDiffuse,vUv+o).r,texture2D(tDiffuse,vUv).g,texture2D(tDiffuse,vUv-o).b);
+  fragmentShader:`uniform sampler2D tDiffuse;uniform float uTime,uAberr,uVig,uAspect,uFlash,uShockT,uShockA,uAlert;uniform vec2 uFPos;uniform vec3 uFCol;varying vec2 vUv;
+  void main(){vec2 asp=vec2(uAspect,1.0);vec2 dv=(vUv-uFPos)*asp;float d=length(dv);
+  float ring=uShockA*exp(-pow((d-uShockT*0.55)/0.045,2.0))*exp(-uShockT*0.8);
+  vec2 uv=vUv-(d>1e-4?dv/d:vec2(0.0))/asp*ring*0.03;
+  vec2 c=uv-0.5;float r2=dot(c,c);vec2 o=c*(uAberr+ring*0.012)*(0.6+r2*3.0);
+  vec3 col=vec3(texture2D(tDiffuse,uv+o).r,texture2D(tDiffuse,uv).g,texture2D(tDiffuse,uv-o).b);
+  float burst=exp(-d*d/0.06);
+  col+=uFCol*uFlash*(burst*1.3+0.18)+vec3(1.0)*uFlash*uFlash*(0.12+burst*0.5)+vec3(1.0,0.9,0.85)*ring*0.18;
+  col=mix(col,col*0.6+vec3(0.6,0.02,0.09)*0.55,smoothstep(0.1,0.5,r2)*uAlert);
   col*=1.0-uVig*smoothstep(0.08,0.62,r2);
   float n=fract(sin(dot(vUv*vec2(12.9898,78.233)+fract(uTime*0.37),vec2(1.0,1.0)))*43758.5453);
   col+=(n-0.5)*0.022;gl_FragColor=vec4(col,1.0);}`
@@ -760,12 +1046,13 @@ function initGL(){
   const rip=[],ripP=[],ripC=[];
   for(let i=0;i<RIP_N;i++){ rip.push(new THREE.Vector4(0,1,0,-1e4)); ripP.push(new THREE.Vector4(0.1,0.05,1,0)); ripC.push(new THREE.Vector3(1,1,1)); }
   Object.assign(U,{uTime:{value:100},uRip:{value:rip},uRipP:{value:ripP},uRipC:{value:ripC},uXray:{value:0},uBeat:{value:0},uAudio:{value:0},uFlash:{value:0},uPix:{value:pr},uShowAll:{value:0.32},uSun:{value:new THREE.Vector3(1,0,0)}});
-  buildBackground(); buildStars(); const mask=buildLandMask(); buildOcean(mask); buildDots(mask); buildAtmo(); buildCore(); buildPools(); buildAdoptMarker();
+  buildBackground(); buildStars(); const mask=buildLandMask(); buildOcean(mask); buildDots(mask); buildAtmo(); buildCorona(); buildCore(); buildPools(); buildSparks(); buildAdoptMarker();
   composer=new THREE.EffectComposer(renderer);
   composer.addPass(new THREE.RenderPass(scene,camera));
   bloom=new THREE.UnrealBloomPass(new THREE.Vector2(512,512),0.95,0.62,0.14); composer.addPass(bloom);
   finalPass=new THREE.ShaderPass(FinalShader); composer.addPass(finalPass);
-  controls.addEventListener('start',()=>{ Cam.hold=1e9; });
+  finalPass.uniforms.uFPos.value=new THREE.Vector2(0.5,0.5); finalPass.uniforms.uFCol.value=new THREE.Color(1,1,1);
+  controls.addEventListener('start',()=>{ Cam.hold=1e9; Cam.intro=null; });
   controls.addEventListener('end',()=>{ Cam.hold=5; });
   return true;
 }
@@ -847,6 +1134,8 @@ function buildDots(mask){
     fragmentShader:`uniform float uXray,uBeat;varying vec3 vC;varying float vG;varying float vB;varying float vR;varying float vDay;
     void main(){float d=length(gl_PointCoord-0.5);float a=smoothstep(0.5,0.05,d);
       vec3 base=mix(vec3(0.20,0.27,0.48),vec3(0.42,0.56,0.82),vDay)*(0.42+0.16*vR+0.12*uBeat);
+      float city=step(0.8,vR)*(1.0-smoothstep(0.0,0.45,vDay))*(1.0-uXray);
+      base=mix(base,vec3(1.0,0.66,0.32)*(0.45+0.5*fract(vR*37.0)),city*0.8);
       vec3 col=base+vC*min(vG,1.8)*1.1;float al=a*(0.55+min(vG,1.6)*0.5)*mix(1.0,0.16,vB*uXray);
       gl_FragColor=vec4(col*al,1.0);}`});
   dots=new THREE.Points(g,m); dots.renderOrder=2; scene.add(dots);
@@ -863,6 +1152,50 @@ function buildAtmo(){
       vec3 c=mix(uA,uB,clamp(uBeat*0.4+uFlash*0.7,0.0,1.0));
       gl_FragColor=vec4(c*g*lit*(0.8+uBeat*0.45+uAudio*1.0+uFlash*1.1),1.0);}`});
   atmo=new THREE.Mesh(new THREE.SphereGeometry(1,96,64),m); atmo.scale.setScalar(1.2); atmo.renderOrder=0; scene.add(atmo);
+}
+// Audio corona: a spectrum of the sound standing on the globe's rim, plus a ring that leaves the planet on every heartbeat
+const SPEC_N=64, specData=new Uint8Array(SPEC_N*4), spec=new Float32Array(SPEC_N), specBase=new Float32Array(SPEC_N);
+function buildCorona(){
+  specTex=new THREE.DataTexture(specData,SPEC_N,1,THREE.RGBAFormat); specTex.needsUpdate=true;
+  const m=new THREE.ShaderMaterial({transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,
+    uniforms:{uSpec:{value:specTex},uR0:{value:1.03},uBeatAge:{value:9},uLevel:{value:0},uCol:{value:new THREE.Color(0.6,0.7,1.0)}},
+    vertexShader:'varying vec2 vP;void main(){vP=position.xy;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}',
+    fragmentShader:`uniform sampler2D uSpec;uniform float uR0,uBeatAge,uLevel;uniform vec3 uCol;varying vec2 vP;
+    void main(){float r=length(vP);float u=abs(atan(vP.x,vP.y))/3.14159265;
+      float B=64.0;float bi=floor(u*B);float fb=fract(u*B);
+      float s=texture2D(uSpec,vec2((bi+0.5)/B,0.5)).r;
+      float r0=uR0*1.06;float h=0.003+s*0.11*uLevel;float aa=0.003;
+      float inBar=smoothstep(0.26,0.36,fb)*(1.0-smoothstep(0.64,0.74,fb));
+      float bar=inBar*smoothstep(r0-aa,r0+aa,r)*(1.0-smoothstep(r0+h-aa,r0+h+aa,r));
+      float k=clamp((r-r0)/max(h,0.001),0.0,1.0);
+      vec3 bc=mix(uCol,vec3(1.0),k*k*0.5)*(0.15+0.85*s)*0.8;
+      float age=uBeatAge;float hr=uR0*(1.0+age*0.3);float w=0.004+age*0.012;
+      float halo=exp(-pow((r-hr)/w,2.0))*exp(-age*2.6)*0.5;
+      gl_FragColor=vec4(bc*bar*0.95+vec3(1.0,0.32,0.5)*halo,1.0);}`});
+  corona=new THREE.Mesh(new THREE.PlaneGeometry(4,4),m); corona.renderOrder=2; scene.add(corona);
+}
+function updateCorona(dt){
+  if(!corona) return;
+  corona.quaternion.copy(camera.quaternion);
+  const u=corona.material.uniforms, D=camera.position.length(), on=Sound.live();
+  u.uR0.value=D/Math.sqrt(Math.max(1e-4,D*D-1)); // the globe's silhouette radius in the plane through its centre
+  if(on){
+    const fb=Sound.fbuf, binHz=Sound.ctx.sampleRate/Sound.analyser.fftSize; Sound.analyser.getByteFrequencyData(fb);
+    for(let i=0;i<SPEC_N;i++){
+      const f0=110*Math.pow(60,i/SPEC_N), f1=110*Math.pow(60,(i+1)/SPEC_N), a=Math.min(fb.length-1,Math.floor(f0/binHz)), b=Math.min(fb.length,Math.max(a+1,Math.ceil(f1/binHz)));
+      let mx=0; for(let j=a;j<b;j++) if(fb[j]>mx) mx=fb[j];
+      const raw=clamp((mx-70)/150,0,1); specBase[i]+=(raw-specBase[i])*Math.min(1,dt*0.5);
+      const v=clamp((raw-specBase[i]*0.92)*2.2,0,1); spec[i]+= v>spec[i] ? (v-spec[i])*0.75 : (v-spec[i])*Math.min(1,dt*3.5);
+    }
+  } else {
+    const a=SeisSynth.amp, hb=Heart.env;
+    for(let i=0;i<SPEC_N;i++){ const v=clamp(a*0.5*(0.55+0.45*Math.sin(i*1.9+vtime*7.0))+hb*0.22*Math.pow(1-i/SPEC_N,2),0,1); spec[i]+=(v-spec[i])*Math.min(1,dt*8); }
+  }
+  for(let i=0;i<SPEC_N;i++) specData[i*4]=Math.round(spec[i]*255);
+  specTex.needsUpdate=true;
+  u.uLevel.value+=((on?1:0.75)-u.uLevel.value)*Math.min(1,dt*2);
+  u.uBeatAge.value=vtime-ECG.beatAt;
+  const c=lastEv? lastEv.rgb : [0.6,0.7,1.0]; u.uCol.value.setRGB(c[0],c[1],c[2]);
 }
 function buildCore(){
   const m=new THREE.ShaderMaterial({transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,uniforms:{uXray:U.uXray,uBeat:U.uBeat},
@@ -903,6 +1236,13 @@ function buildPools(){
   for(let i=0;i<28;i++){
     const s=new THREE.Sprite(new THREE.SpriteMaterial({map:heartTexture(),transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,opacity:0}));
     s.visible=false; s.renderOrder=5; scene.add(s); pools.hearts.push({s,t:-1,life:1.8,v:new THREE.Vector3(),p:new THREE.Vector3()});
+  }
+  // arcs: a comet of light from the previous quake to the next, so consecutive beats read as one pulse travelling the planet
+  const av='varying float vU;void main(){vU=uv.x;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}';
+  const af='uniform vec3 uA,uB;uniform float uHead,uO;varying float vU;void main(){float d=uHead-vU;float trail=d>=0.0?exp(-d*4.5):0.0;float head=exp(-d*d*1400.0);vec3 c=mix(uA,uB,vU);gl_FragColor=vec4((c*(trail*0.9+0.12*step(vU,uHead))+vec3(1.0)*head*0.8)*uO,1.0);}';
+  for(let i=0;i<10;i++){
+    const m=new THREE.ShaderMaterial({uniforms:{uA:{value:new THREE.Color()},uB:{value:new THREE.Color()},uHead:{value:0},uO:{value:0}},vertexShader:av,fragmentShader:af,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending});
+    const mesh=new THREE.Mesh(new THREE.BufferGeometry(),m); mesh.visible=false; mesh.renderOrder=4; scene.add(mesh); pools.arcs.push({mesh,t:-1,life:2,dur:0.6});
   }
 }
 function buildAdoptMarker(){
@@ -974,8 +1314,53 @@ function spawnHearts(e){
     h.v.copy(e.vec).multiplyScalar(0.16+Math.random()*0.1).add(side.multiplyScalar(0.5)); h.s.visible=true;
   }
 }
+// sparks: embers thrown across the surface from a great quake (positions computed on the GPU from spawn time)
+const SPARK_N=320; let sparks=null, sparkNext=0;
+function buildSparks(){
+  const N=SPARK_N, g=new THREE.BufferGeometry();
+  g.setAttribute('position',new THREE.BufferAttribute(new Float32Array(N*3),3));
+  g.setAttribute('aDir',new THREE.BufferAttribute(new Float32Array(N*3),3));
+  g.setAttribute('aP',new THREE.BufferAttribute(new Float32Array(N*4).fill(-1e4),4));
+  g.setAttribute('aCol',new THREE.BufferAttribute(new Float32Array(N*3),3));
+  const m=new THREE.ShaderMaterial({transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,uniforms:{uTime:U.uTime,uPix:U.uPix},
+    vertexShader:`attribute vec3 aDir;attribute vec4 aP;attribute vec3 aCol;uniform float uTime,uPix;varying vec3 vC;varying float vA;
+    void main(){float age=uTime-aP.x;float k=age/aP.z;
+      if(age<0.0||k>1.0){vA=0.0;vC=vec3(0.0);gl_PointSize=0.0;gl_Position=vec4(2.0,2.0,2.0,1.0);return;}
+      float th=aP.y*(1.0-(1.0-k)*(1.0-k));vec3 p=(normalize(position)*cos(th)+aDir*sin(th))*(1.006+aP.w*sin(3.14159*k));
+      vec4 mv=modelViewMatrix*vec4(p,1.0);vA=pow(1.0-k,1.4);vC=mix(vec3(1.0,0.95,0.85),aCol,smoothstep(0.0,0.6,k));
+      gl_PointSize=(1.8+3.2*(1.0-k))*uPix*(3.4/-mv.z);gl_Position=projectionMatrix*mv;}`,
+    fragmentShader:`varying vec3 vC;varying float vA;void main(){float d=length(gl_PointCoord-0.5);gl_FragColor=vec4(vC*smoothstep(0.5,0.0,d)*vA*1.5,1.0);}`});
+  sparks=new THREE.Points(g,m); sparks.frustumCulled=false; sparks.renderOrder=5; scene.add(sparks);
+}
+function spawnSparks(e,n){
+  if(!sparks) return;
+  const g=sparks.geometry, P=g.attributes.position, D=g.attributes.aDir, A=g.attributes.aP, C=g.attributes.aCol, c=e.vec, now=U.uTime.value;
+  const up=Math.abs(c.y)>0.95? new THREE.Vector3(1,0,0) : new THREE.Vector3(0,1,0), t1=new THREE.Vector3().crossVectors(c,up).normalize(), t2=new THREE.Vector3().crossVectors(c,t1).normalize();
+  for(let k=0;k<n;k++){
+    const i=sparkNext; sparkNext=(sparkNext+1)%SPARK_N; const a=Math.random()*Math.PI*2, ca=Math.cos(a), sa=Math.sin(a);
+    P.setXYZ(i,c.x,c.y,c.z); D.setXYZ(i,t1.x*ca+t2.x*sa,t1.y*ca+t2.y*sa,t1.z*ca+t2.z*sa);
+    A.setXYZW(i,now+Math.random()*0.12,0.05+Math.pow(Math.random(),1.6)*0.45,0.9+Math.random()*1.5,0.01+Math.random()*0.07);
+    const w=Math.random(); C.setXYZ(i,lerp(e.rgb[0],1.0,w*0.3),lerp(e.rgb[1],0.55,w*0.5),lerp(e.rgb[2],0.25,w*0.5));
+  }
+  P.needsUpdate=D.needsUpdate=A.needsUpdate=C.needsUpdate=true;
+}
+function arcPoint(a,b,ang,lift,t){
+  const s=Math.sin(ang), w1=s<1e-4?1-t:Math.sin((1-t)*ang)/s, w2=s<1e-4?t:Math.sin(t*ang)/s;
+  return new THREE.Vector3().copy(a).multiplyScalar(w1).addScaledVector(b,w2).normalize().multiplyScalar(1.006+lift*Math.sin(Math.PI*t));
+}
+function spawnArc(a,b){
+  const ang=a.vec.angleTo(b.vec); if(ang<0.02) return;
+  let k=pools.arcs.find(x=>x.t<0); if(!k) k=pools.arcs.reduce((p,c)=>c.t<p.t?c:p);
+  const lift=0.02+0.2*ang/Math.PI, segs=Math.max(18,Math.round(80*ang/Math.PI)+18), pts=[];
+  for(let i=0;i<=segs;i++) pts.push(arcPoint(a.vec,b.vec,ang,lift,i/segs));
+  k.mesh.geometry.dispose(); k.mesh.geometry=new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts),segs,0.0024,5,false);
+  const u=k.mesh.material.uniforms; u.uA.value.setRGB(a.rgb[0],a.rgb[1],a.rgb[2]); u.uB.value.setRGB(b.rgb[0],b.rgb[1],b.rgb[2]);
+  k.t=U.uTime.value; k.dur=0.35+0.55*ang/Math.PI; k.life=k.dur+1.5; k.mesh.visible=true;
+}
 function updatePools(){
   const now=U.uTime.value;
+  for(const k of pools.arcs){ if(k.t<0) continue; const a=now-k.t; if(a>=k.life){ k.t=-1; k.mesh.visible=false; continue; }
+    const u=k.mesh.material.uniforms; u.uHead.value=Math.min(1.08,a/k.dur); u.uO.value= a<k.dur ? 1 : Math.pow(1-(a-k.dur)/(k.life-k.dur),1.5); }
   for(const b of pools.beams){ if(b.t<0) continue; const a=(now-b.t)/b.life; if(a>=1){ b.t=-1; b.mesh.visible=false; continue; }
     const grow=Math.min(1,(now-b.t)/0.18); b.mesh.scale.set(b.w*(1+a*0.6),b.h*grow*(1-a*0.25),b.w*(1+a*0.6)); b.mesh.material.uniforms.uO.value=Math.pow(1-a,1.8); }
   for(const r of pools.rings){ if(r.t<0) continue; const a=(now-r.t)/r.life; if(a>=1){ r.t=-1; r.mesh.visible=false; continue; }
@@ -985,7 +1370,8 @@ function updatePools(){
 }
 
 /* ================= Camera ================= */
-const Cam={hold:0, follow:store.get('follow',true), target:null, shake:0, attn:[], drift:0};
+const Cam={hold:0, follow:store.get('follow',true), target:null, shake:0, attn:[], drift:0, intro:null};
+const Layout={W:1,H:1,cx:0};
 function updateCamera(dt){
   if(!camera) return;
   controls.update();
@@ -1005,6 +1391,7 @@ function updateCamera(dt){
     }
     camera.position.copy(cur.multiplyScalar(dist)); camera.lookAt(0,0,0);
   }
+  if(Cam.intro){ const I=Cam.intro; I.t+=dt; const f=clamp(I.t/I.dur,0,1); camera.position.setLength(baseDist*lerp(I.k,1,1-Math.pow(1-f,3))); if(f>=1) Cam.intro=null; }
   if(Cam.shake>0.0004 && !RM){ camera.rotateX((Math.random()-0.5)*Cam.shake); camera.rotateY((Math.random()-0.5)*Cam.shake); }
   Cam.shake*=Math.exp(-dt*3.2);
 }
@@ -1016,6 +1403,7 @@ function layoutGlobe(){
   const bottom=(mob? $('#now').getBoundingClientRect().top : $('#deck').getBoundingClientRect().top)-app.top-8;
   const right=mob? W : $('#panel').getBoundingClientRect().left-app.left-12;
   const cx=right/2, cy=(top+bottom)/2, availW=right, availH=Math.max(140,bottom-top);
+  Layout.W=W; Layout.H=H; Layout.cx=cx;
   camera.setViewOffset(W,H,W/2-cx,H/2-cy,W,H); camera.updateProjectionMatrix();
   const f=(H/2)/Math.tan(camera.fov*DEG/2), px=0.5*Math.min(availW*0.9,availH*0.92);
   const d=clamp(Math.sqrt((f/px)**2+1),1.9,12);
@@ -1102,12 +1490,12 @@ const Heart={bpm:62,adr:0,next:0,env:0,
     while(this.next<now+0.16){ const at=this.next; if(Sound.live()) Sound.beat(Sound.at(at),0.72+0.28*clamp((this.bpm-60)/80,0,1)); vq.push({at:at+Sound.lat(),kind:'b'}); this.next+=60/this.bpm; }
     this.env*=Math.exp(-dt*6.5);
   },
-  onBeat(){ this.env=1; UI.beat(); SeisSynth.kick(0.18); },
+  onBeat(){ this.env=1; ECG.beatAt=vtime; UI.beat(); SeisSynth.kick(0.18); },
   shock(m){ this.adr=Math.max(this.adr,adrFor(m)); if(m>=7) this.next+=0.85; }
 };
 
 /* ================= Visual reaction to a quake ================= */
-let lastEv=null;
+let lastEv=null, lastEvAt=-99;
 function onQuakeVisual(e,user,arrival){
   if(renderer){
     const mm=arrival? Math.max(e.mag,3.6) : e.mag; // even a tiny live quake gets a visible wave
@@ -1115,19 +1503,49 @@ function onQuakeVisual(e,user,arrival){
     if(Player.s && Player.s.events[e.i]===e) markPlayed(e.i,U.uTime.value);
     Cam.attn.push({v:e.vec,w:Math.pow(10,0.35*Math.max(0,e.mag))*(e.hl?4:1),t:U.uTime.value});
     if(user||arrival){ Cam.attn.push({v:e.vec,w:1e4,t:U.uTime.value}); }
+    if(lastEv && lastEv!==e && vtime-lastEvAt<12) spawnArc(lastEv,e);
+    if((user || (!e.hl && !arrival && e.mag>=Player.s.ringThr-1)) && (!Tag.e || vtime-Tag.t>1.5 || e.mag>=Tag.e.mag || user)) showTag(e);
   }
   Heart.shock(e.mag);
   SeisSynth.kick(0.25+0.11*Math.max(0,e.mag));
-  UI.showNow(e); lastEv=e;
-  if(arrival) UI.caption(e,{title:'방금 들어온 지진 · '+e.ko.main, sub:`${agoText(Date.now()-e.t)} 발생 · ${fHM(e.t)} · 깊이 ${fDepth(e.depth)}`});
+  UI.showNow(e); lastEv=e; lastEvAt=vtime;
+  if(arrival) UI.caption(e,{eye:'LIVE · USGS FEED', title:'방금 들어온 지진 · '+e.ko.main, sub:`${agoText(Date.now()-e.t)} 발생 · ${fHM(e.t)} · 깊이 ${fDepth(e.depth)}`});
   else if(!user && e.hl) UI.caption(e);
-  if(e.mag>=6.4 && (e.hl || e.mag>=7)){
-    FX.flash=Math.min(1.0,0.45+(e.mag-6)*0.2); Cam.shake=Math.max(Cam.shake,0.0035*(e.mag-5.8));
-    if(e.mag>=7 && !user && !RM) Player.slow=0.32;
-  }
+  if(e.mag>=6.4 && (e.hl || e.mag>=7)) greatQuake(e,user);
   if(Adopt.has(e)){ Adopt.beat(e,user); if(renderer) spawnHearts(e); }
 }
-const FX={flash:0};
+const FX={flash:0, shockT:99, shockA:0, alert:0, alertOn:false, e:null};
+// The big ones: a flash out of the epicentre, a shockwave that bends the screen, embers, a shaking console, and a red alert pulsing with the heart
+function greatQuake(e,user){
+  const I=clamp((e.mag-6.4)/2.6,0,1); // M6.4 → 0 … M9 → 1
+  FX.e=e; FX.flash=Math.max(FX.flash, RM? 0.35+I*0.3 : 0.6+I*0.95);
+  if(finalPass){ const c=e.rgb; finalPass.uniforms.uFCol.value.setRGB(lerp(c[0],1,0.35),lerp(c[1],1,0.35),lerp(c[2],1,0.35)); }
+  if(!RM){ FX.shockT=0; FX.shockA=0.45+I*0.75; Cam.shake=Math.max(Cam.shake,0.004+I*0.014); }
+  if(e.mag>=7){ FX.alert=Math.max(FX.alert,0.35+I*0.65); if(!user && !RM) Player.slow=0.32; }
+  if(renderer){ spawnSparks(e,Math.round(60+I*200)); if(e.mag>=7.5) spawnRipple(e,{speed:0.5,col:[1.0,0.92,0.85],w:0.55,thin:1.5}); }
+  if(!RM && e.mag>=7){ const h=$('#hud'); h.style.setProperty('--amp',(2+I*7).toFixed(1)+'px'); h.style.setProperty('--dur',(0.8+I*0.9).toFixed(2)+'s'); h.classList.remove('shake'); void h.offsetWidth; h.classList.add('shake'); }
+}
+// lock-on tag: brackets and a label riding on the latest notable quake
+const Tag={e:null,t:-99,el:null,on:false};
+function showTag(e){
+  const el=Tag.el||(Tag.el=$('#tag')); Tag.e=e; Tag.t=vtime;
+  el.style.setProperty('--q',css(e.rgb)); $('#tagMag').textContent='M'+e.mag.toFixed(1); $('#tagTxt').textContent=(e.ko.region||e.ko.main)+' · '+fDepth(e.depth);
+  el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop');
+}
+function updateTag(){
+  const el=Tag.el, e=Tag.e; if(!el) return;
+  let show=!!(e && camera && vtime-Tag.t<4.8);
+  if(show){
+    const xr=U.uXray.value; _v.copy(camera.position).normalize();
+    if(e.vec.dot(_v)<0.12 && xr<0.5) show=false;
+    else {
+      _v.copy(e.vec).multiplyScalar(lerp(1.007,e.dr,xr)).project(camera);
+      const x=(_v.x*0.5+0.5)*Layout.W, y=(-_v.y*0.5+0.5)*Layout.H;
+      el.style.transform=`translate(${x.toFixed(1)}px,${y.toFixed(1)}px)`; el.classList.toggle('flip',x>Layout.cx);
+    }
+  }
+  if(show!==Tag.on){ Tag.on=show; el.classList.toggle('on',show); }
+}
 
 /* ================= Adoption ================= */
 const PRESETS=[
@@ -1183,6 +1601,28 @@ function drawSeismo(dt){
   x.setTransform(1,0,0,1,0,0);
 }
 
+/* ================= ECG monitor (BPM box) ================= */
+const ECG={cv:null,x:null,ys:null,head:0,acc:0,beatAt:-9};
+function ecgWave(tau,period){ // P, QRS, T as gaussians; R lands on the heartbeat
+  const g=(x,mu,s)=>Math.exp(-((x-mu)*(x-mu))/(2*s*s));
+  return 0.11*g(tau,period-0.14,0.024)-0.12*g(tau,0,0.007)+g(tau,0.02,0.008)-0.24*g(tau,0.044,0.009)+0.26*g(tau,0.23,0.042);
+}
+function drawEcg(dt){
+  const c=ECG.cv; if(!c) return; const w=c.clientWidth, h=c.clientHeight; if(!w||!h) return;
+  const dpr=Math.min(2,window.devicePixelRatio||1), n=Math.round(w);
+  if(c.width!==Math.round(w*dpr)||c.height!==Math.round(h*dpr)||!ECG.ys||ECG.ys.length!==n){ c.width=Math.round(w*dpr); c.height=Math.round(h*dpr); ECG.ys=new Float32Array(n).fill(NaN); ECG.head=0; }
+  const speed=n/2.4, period=60/Math.max(40,Heart.bpm), amp=1+Math.min(0.8,Heart.adr/40);
+  ECG.acc+=dt*speed;
+  while(ECG.acc>=1){ ECG.acc-=1; const tau=vtime-ECG.acc/speed-ECG.beatAt; let y=(tau>=0&&tau<period*1.6)? ecgWave(tau,period)*amp : 0; y+=(Math.random()-0.5)*SeisSynth.amp*0.4; ECG.ys[ECG.head]=y; ECG.head=(ECG.head+1)%n; }
+  const x=ECG.x; x.setTransform(dpr,0,0,dpr,0,0); x.clearRect(0,0,w,h);
+  x.fillStyle='rgba(255,61,110,0.07)'; for(let gx=0;gx<w;gx+=8) x.fillRect(gx,0,1,h); for(let gy=(h%8)/2;gy<h;gy+=8) x.fillRect(0,gy,w,1);
+  const Y=v=>h*0.68-v*h*0.58, gap=12;
+  const trace=(style,width)=>{ x.beginPath(); let pen=false; for(let i=0;i<n;i++){ const d=(i-ECG.head+n)%n, v=ECG.ys[i]; if(d<gap||v!==v){ pen=false; continue; } if(pen) x.lineTo(i,Y(v)); else { x.moveTo(i,Y(v)); pen=true; } } x.lineWidth=width; x.strokeStyle=style; x.stroke(); };
+  x.lineJoin='round'; trace('rgba(255,61,110,0.22)',3.4); trace('rgba(255,120,150,0.95)',1.3);
+  const hi=(ECG.head-1+n)%n, hv=ECG.ys[hi];
+  if(hv===hv){ x.fillStyle='rgba(255,61,110,0.35)'; x.beginPath(); x.arc(hi,Y(hv),4.5,0,Math.PI*2); x.fill(); x.fillStyle='#fff'; x.beginPath(); x.arc(hi,Y(hv),1.6,0,Math.PI*2); x.fill(); }
+}
+
 /* ================= Timeline ================= */
 const TL={cv:null,x:null,drag:false};
 function drawTimeline(){
@@ -1217,7 +1657,7 @@ function tlSeek(clientX){
 const UI={
   clockKey:'',
   init(){
-    TL.cv=$('#timeline'); TL.x=TL.cv.getContext('2d'); Seis.cv=$('#seismo'); Seis.x=Seis.cv.getContext('2d');
+    TL.cv=$('#timeline'); TL.x=TL.cv.getContext('2d'); Seis.cv=$('#seismo'); Seis.x=Seis.cv.getContext('2d'); ECG.cv=$('#ecg'); ECG.x=ECG.cv.getContext('2d');
     $('#playBtn').onclick=()=>{ ensureStarted(false); Player.toggle(); };
     $('#speedBtn').onclick=()=>{ Player.speedI=(Player.speedI+1)%SPEEDS.length; store.set('speedI',Player.speedI); this.setSpeed(); };
     $('#xrayBtn').onclick=()=>this.setXray(!this.xray);
@@ -1226,6 +1666,10 @@ const UI={
     $('#menuBtn').onclick=()=>this.sheet(!$('#panel').classList.contains('open'));
     $('#sheetClose').onclick=()=>this.sheet(false);
     $('#liveBtn').onclick=()=>{ ensureStarted(false); Player.goLive(); this.toast('지금 이 순간으로 왔어요 · 새 지진이 올라오면 바로 울려요'); };
+    $('#voicePrev').onclick=()=>Voice.step(-1);
+    $('#voiceNext').onclick=()=>Voice.step(1);
+    $('#hud').addEventListener('animationend',e=>{ if(e.animationName==='hudShake') e.currentTarget.classList.remove('shake'); });
+    $('#lcd').onclick=()=>{ this.tab('voice'); if(mqMobile.matches) this.sheet(true); };
     document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>this.tab(b.dataset.tab));
     $('#startBtn').onclick=()=>ensureStarted(true,true);
     $('#silentBtn').onclick=()=>ensureStarted(false,true);
@@ -1234,12 +1678,14 @@ const UI={
     TL.cv.addEventListener('pointerup',()=>{ TL.drag=false; });
     TL.cv.addEventListener('pointercancel',()=>{ TL.drag=false; });
     this.setSpeed(); $('#followBtn').setAttribute('aria-pressed',Cam.follow);
-    this.renderScenes(); this.renderSound(); this.renderAdopt();
+    this.renderScenes(); this.renderVoicePane(); this.renderSound(); this.renderAdopt();
     addEventListener('keydown',e=>{
       if(e.target.tagName==='INPUT') return;
       if(e.code==='Space'){ e.preventDefault(); ensureStarted(false); Player.toggle(); }
       else if(e.key==='x'||e.key==='X') this.setXray(!this.xray);
       else if(e.key==='m'||e.key==='M') $('#muteBtn').click();
+      else if(e.key===']') Voice.step(1);
+      else if(e.key==='[') Voice.step(-1);
       else if(e.key==='ArrowRight'&&Player.s){ const i=Math.min(Player.s.events.length-1,Player.next); Player.seekEvent(Player.s.events[i]); }
       else if(e.key==='ArrowLeft'&&Player.s){ const i=Math.max(0,Player.next-2); Player.seekEvent(Player.s.events[i]); }
     });
@@ -1256,12 +1702,20 @@ const UI={
   toast(msg){ const t=$('#toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(this._toastT); this._toastT=setTimeout(()=>t.classList.remove('show'),2600); },
   _capT:0,
   hideCaption(){ clearTimeout(this._capT); $('#caption').classList.remove('show'); },
-  caption(e,o={}){ const c=$('#caption'); c.style.setProperty('--q',css(e.rgb)); $('#capMag').textContent='M '+e.mag.toFixed(1); $('#capTitle').textContent=o.title||e.hl; $('#capSub').textContent=o.sub||`${fDate(e.t)} ${fHM(e.t)} · 깊이 ${fDepth(e.depth)}`; c.classList.add('show'); clearTimeout(this._capT); this._capT=setTimeout(()=>c.classList.remove('show'),e.mag>=7?5200:3800); },
+  _capRaf:0,
+  caption(e,o={}){
+    const c=$('#caption'); c.style.setProperty('--q',css(e.rgb));
+    $('#capEye').textContent=o.eye||magClass(e.mag); $('#capTitle').textContent=o.title||e.hl; $('#capSub').textContent=o.sub||`${fDate(e.t)} ${fHM(e.t)} · 깊이 ${fDepth(e.depth)}`;
+    const el=$('#capMag'), to=e.mag; cancelAnimationFrame(this._capRaf);
+    if(RM) el.textContent='M '+to.toFixed(1);
+    else { const from=Math.max(0,to-2.4), t0=performance.now(), step=()=>{ const k=Math.min(1,(performance.now()-t0)/700); el.textContent='M '+(from+(to-from)*(1-Math.pow(1-k,3))).toFixed(1); if(k<1) this._capRaf=requestAnimationFrame(step); }; step(); }
+    c.classList.toggle('great',e.mag>=7.5); c.classList.add('show'); clearTimeout(this._capT); this._capT=setTimeout(()=>c.classList.remove('show'),e.mag>=7?5200:3800);
+  },
   showNow(e){
     const n=$('#now'); n.style.setProperty('--q',css(e.rgb));
     $('#nowMag').textContent=e.mag.toFixed(1); $('#nowPlace').textContent=e.ko.main; $('#nowOrig').textContent=e.ko.sub||'';
     $('#nowWhen').textContent=`${fShort(e.t)}:${kst(e.t).second}`; $('#nowDepth').textContent='깊이 '+fDepth(e.depth);
-    $('#nowVoice').textContent=`${noteName(e.midi)}(${noteSol(e.midi)}) · ${VOICES[e.voice].name}`;
+    $('#nowVoice').textContent=`${noteName(e.midi)}(${noteSol(e.midi)}) · ${voiceLabel(e)}`;
     $('#nowLink').href='https://earthquake.usgs.gov/earthquakes/eventpage/'+encodeURIComponent(e.id);
     $('#gaugeMark').style.top=`calc(${clamp(e.depth/700,0,1)*100}% - 1.5px)`;
   },
@@ -1339,15 +1793,54 @@ const UI={
     box.innerHTML=`<div class="stat"><b>${st.n}</b><span>이 기록 속 박동</span></div><div class="stat"><b>${st.max?'M'+st.max.mag.toFixed(1):'–'}</b><span>가장 큰 울음</span></div><div class="stat"><b>${Adopt.beats}</b><span>함께 들은 박동</span></div>`;
     $('#persona').textContent=persona(a.name,st,Player.s);
   },
+  renderVoicePane(){
+    const p=$('#pane-voice');
+    p.innerHTML=`<div class="lcd big" id="lcdBig"><span class="lcd-top"><span>VOICE<b id="lcdBigNum"></b></span><span id="lcdBigBeat"></span></span><span class="lcd-name" id="lcdBigName"></span><span class="lcd-sub"><span id="lcdBigSub"></span></span></div>
+      <div class="kbd-row"><button class="btn" id="vPrev">◀ 이전</button><button class="btn heart" id="vDemo">▶ 데모 연주</button><button class="btn" id="vNext">다음 ▶</button></div>
+      <p class="lede" id="vDesc" aria-live="polite"></p>`;
+    p.querySelector('#vPrev').onclick=()=>Voice.step(-1);
+    p.querySelector('#vNext').onclick=()=>Voice.step(1);
+    p.querySelector('#vDemo').onclick=()=>{ ensureStarted(true); Voice.preview(true); };
+    for(const f of [...new Set(VOICE_LIST.map(v=>v.fam))]){
+      const g=document.createElement('div'); g.className='vgroup'; g.innerHTML=`<div class="eyebrow">${f}</div><div class="vgrid"></div>`;
+      const members=VOICE_LIST.map((v,i)=>[v,i]).filter(([v])=>v.fam===f);
+      for(const [v,i] of members){
+        const b=document.createElement('button'); b.className='vbtn'+(members.length===1?' wide':''); b.dataset.i=i; b.title=v.desc; b.setAttribute('aria-pressed','false');
+        b.innerHTML=`<span class="no">${pad3(v.no)}</span><span class="nm">${v.short||v.ko}</span><span class="led"></span>`;
+        b.onclick=()=>{ ensureStarted(true); Voice.set(i); }; g.lastElementChild.appendChild(b);
+      }
+      p.appendChild(g);
+    }
+    const bg=document.createElement('div'); bg.className='vgroup'; bg.innerHTML='<div class="eyebrow">심장 박자 소리</div><div class="vrow"></div>';
+    for(const B of BEATS){ const b=document.createElement('button'); b.className='vbtn'; b.dataset.beat=B.key; b.title=B.desc; b.setAttribute('aria-pressed','false'); b.innerHTML=`<span class="nm">${B.ko}</span><span class="led"></span>`; b.onclick=()=>{ ensureStarted(true); Voice.setBeat(B.key); }; bg.lastElementChild.appendChild(b); }
+    p.appendChild(bg);
+    p.insertAdjacentHTML('beforeend','<p class="src-note">키보드의 [ ] 키로도 바꿀 수 있어요. 악기 소리는 FluidR3 GM 사운드폰트(Frank Wen, MIT 라이선스)로 한 음씩 연주해 녹음했어요.</p>');
+  },
+  _vkey:'',
+  onVoice(){
+    const P=Voice.cur, B=BEATS.find(b=>b.key===Voice.beat)||BEATS[0], st=Sound.ready? Samples.state(Voice.keys()) : 'ready';
+    const sub= st==='loading'? '악기 소리 불러오는 중…' : st==='fail'? '악기 소리를 못 불러와 전자음으로 연주해요' : P.ko.includes(P.fam)? P.ko : `${P.ko} · ${P.fam}`;
+    const T=(id,v)=>{ const el=document.getElementById(id); if(el && el.textContent!==v) el.textContent=v; };
+    T('lcdNum',pad3(P.no)); T('lcdName',P.en); T('lcdKo',P.ko); T('lcdSub',sub); T('lcdBeat','♥ '+B.en);
+    T('lcdBigNum',pad3(P.no)); T('lcdBigName',P.en); T('lcdBigSub',sub); T('lcdBigBeat','BEAT ♥ '+B.en); T('vDesc',P.desc);
+    for(const id of ['lcd','lcdBig']){ const el=document.getElementById(id); if(el){ el.classList.toggle('loading',st==='loading'); el.classList.toggle('fail',st==='fail'); } }
+    document.querySelectorAll('.vbtn[data-i]').forEach(b=>b.setAttribute('aria-pressed',+b.dataset.i===Voice.i));
+    document.querySelectorAll('.vbtn[data-beat]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.beat===Voice.beat));
+    $('#lcd').setAttribute('aria-label',`악기 ${pad3(P.no)} ${P.ko}. 눌러서 악기 고르기`);
+    const gv=$('#gateVoice'); if(gv) gv.innerHTML=`악기 <b>${pad3(P.no)}</b> ${P.ko} · 피아노·브라스·쳄발로 등 ${VOICE_LIST.length}가지 중에 고를 수 있어요`;
+    if(this._vkey!==P.key){ this._vkey=P.key; this.renderSound(); if(lastEv) $('#nowVoice').textContent=`${noteName(lastEv.midi)}(${noteSol(lastEv.midi)}) · ${voiceLabel(lastEv)}`; }
+  },
   renderSound(){
     const row=$('#scaleRow'); row.innerHTML='';
     for(const m of [1,3,5,6,7,9]){ const n=magMidi(m); const d=document.createElement('div'); d.innerHTML=`<b>M${m}</b><span>${noteName(n)} ${noteSol(n)}</span>`; row.appendChild(d); }
-    const vl=$('#voiceList'); vl.innerHTML='';
+    const vl=$('#voiceList'); vl.innerHTML=''; const P=Voice.cur;
+    $('#depthEyebrow').textContent=`깊이 → 음색 · 지금 악기 ${pad3(P.no)} ${P.ko}`;
     VOICES.forEach((v,i)=>{
+      const nm= P.key==='synth'? v.name : P.key==='orch'? `${v.name} · ${v.orch}` : `${v.name} · ${P.ko}`, ds= P.key==='synth'? v.desc : P.key==='orch'? v.odesc : v.sdesc;
       const el=document.createElement('div'); el.className='voice'; el.style.color=css(depthRGB(v.depth));
-      el.innerHTML=`<i></i><div style="color:var(--ink)"><span class="vn">${v.name}</span><span class="vr">${v.range}</span><p>${v.desc}</p></div>`;
+      el.innerHTML=`<i></i><div style="color:var(--ink)"><span class="vn">${nm}</span><span class="vr">${v.range}</span><p>${ds}</p></div>`;
       const b=document.createElement('button'); b.className='btn small'; b.textContent='▶ 미리 듣기'; b.style.color='var(--ink)';
-      b.onclick=()=>{ ensureStarted(true); const fake={mag:3.2,depth:v.depth,voice:i,midi:magMidi(3.2)}; setTimeout(()=>{ if(Sound.live()) Sound.quake(fake,Sound.ctx.currentTime+0.05,{pan:0,far:0}); },60); };
+      b.onclick=()=>{ ensureStarted(true); const fake={mag:3.2,depth:v.depth,voice:i,midi:magMidi(3.2)}; Promise.all([Samples.ready(Voice.keys()),new Promise(r=>setTimeout(r,60))]).then(()=>{ if(Sound.live()) Sound.quake(fake,Sound.ctx.currentTime+0.05,{pan:0,far:0}); }); };
       el.appendChild(b); vl.appendChild(el);
     });
     $('#srcNote').innerHTML=`데이터: <a href="https://earthquake.usgs.gov/earthquakes/feed/" target="_blank" rel="noopener">USGS 지진 피드</a>와 <a href="https://earthquake.usgs.gov/fdsnws/event/1/" target="_blank" rel="noopener">FDSN 지진 카탈로그</a>. 지도: Natural Earth (world-atlas). 최근 기록은 ${fShort(Date.parse(DATA.fetchedAt))}(한국 시각)에 받았어요.`;
@@ -1392,10 +1885,10 @@ function ensureStarted(withSound,fromGate){
   if(!started){
     started=true; $('#gate').classList.add('out'); setTimeout(()=>{ const g=$('#gate'); if(g) g.hidden=true; },1000);
     if(Sound.init()){ Sound.muted=!withSound; Sound.start(); }
-    UI.setMute(); if(fromGate) Player.play();
+    UI.setMute(); UI.onVoice(); if(fromGate) Player.play();
     return;
   }
-  if(withSound){ if(!Sound.ready && Sound.init()){ Sound.start(); } if(Sound.ready){ if(Sound.ctx.state!=='running') Sound.ctx.resume(); if(Sound.muted){ Sound.setMuted(false); } } UI.setMute(); }
+  if(withSound){ if(!Sound.ready && Sound.init()){ Sound.start(); UI.onVoice(); } if(Sound.ready){ if(Sound.ctx.state!=='running') Sound.ctx.resume(); if(Sound.muted){ Sound.setMuted(false); } } UI.setMute(); }
   else if(Sound.ready && Sound.ctx.state!=='running') Sound.ctx.resume();
 }
 document.addEventListener('visibilitychange',()=>{ if(!Sound.ready) return; if(document.hidden) Sound.ctx.suspend(); else if(started) Sound.ctx.resume(); });
@@ -1444,17 +1937,20 @@ function frame(){
   Player.update(dt); Heart.update(dt); fireQueues();
   if(renderer){
     const xt=UI.xray?1:0; U.uXray.value+=(xt-U.uXray.value)*Math.min(1,dt*2.2);
-    U.uBeat.value=Heart.env; FX.flash*=Math.exp(-dt*1.6); U.uFlash.value=FX.flash;
+    U.uBeat.value=Heart.env; FX.flash*=Math.exp(-dt*1.9); FX.shockT+=dt; FX.alert*=Math.exp(-dt*0.3); U.uFlash.value=Math.min(1,FX.flash);
     if(!Sound.live()) U.uAudio.value*=Math.exp(-dt*4);
     if(Player.s) U.uSun.value.copy(sunDir(Player.realNow()));
     const xr=U.uXray.value; ocean.material.depthWrite=xr<0.02;
     core.visible=xr>0.01; core.scale.setScalar(1+Heart.env*0.12); coreGlow.visible=xr>0.01; coreGlow.material.opacity=xr*(0.28+Heart.env*0.32); coreGlow.scale.setScalar(0.7+Heart.env*0.2);
     shell.material.opacity=xr*0.16;
-    bloom.strength=0.85+Heart.env*0.12+FX.flash*0.5; finalPass.uniforms.uTime.value=vtime; finalPass.uniforms.uAberr.value=0.0012+FX.flash*0.006;
+    const fp=finalPass.uniforms; bloom.strength=0.85+Heart.env*0.12+Math.min(1.5,FX.flash)*0.55; fp.uTime.value=vtime; fp.uAberr.value=0.0012+Math.min(1,FX.flash)*0.006;
+    fp.uFlash.value=FX.flash; fp.uShockT.value=FX.shockT; fp.uShockA.value=FX.shockA; fp.uAlert.value=FX.alert*(0.45+0.55*Heart.env); fp.uAspect.value=Layout.W/Math.max(1,Layout.H);
+    if(FX.e && (FX.flash>0.01 || FX.shockT<5)){ _v.copy(FX.e.vec).project(camera); fp.uFPos.value.set(_v.x*0.5+0.5,_v.y*0.5+0.5); }
+    const al=FX.alert>0.12; if(al!==FX.alertOn){ FX.alertOn=al; $('#bpmBox').classList.toggle('alert',al); }
     if(adoptGroup.visible){ const hs=adoptGroup.userData.heart; hs.scale.setScalar(0.06+Heart.env*0.022); const c=adoptGroup.userData.center, cn=camera.position.clone().normalize(); hs.material.opacity=c.dot(cn)>0.05||xr>0.5?0.95:0; }
-    updateCamera(dt); updatePools(); composer.render();
+    updateCamera(dt); updatePools(); updateCorona(dt); composer.render(); updateTag();
   }
-  drawSeismo(dt);
+  drawSeismo(dt); drawEcg(dt);
   if(Player.playing||TL.drag||live.on) drawTimeline();
   UI.tickClock(false); UI.tickBpm();
 }
@@ -1464,19 +1960,20 @@ function boot(){
   const ok=initGL();
   if(!ok){ const d=document.createElement('div'); d.className='nogl'; d.textContent='이 기기에서는 3D 지구를 그릴 수 없어요. 소리와 타임라인은 그대로 쓸 수 있어요.'; $('#app').insertBefore(d,$('#hud')); $('#gl').style.display='none'; }
   else bindPicking();
-  UI.init();
+  UI.init(); Samples.want(Voice.keys()); UI.onVoice();
   const want=store.get('scene','now'), s=SCENES.find(x=>x.key===want)||SCENES[0];
   Player.load(s,{});
   if(ok){ const f=s.focus; camera.position.set(f.x,f.y,f.z).normalize().multiplyScalar(baseDist); }
   placeAdoptMarker(Adopt.a);
   const relayout=()=>{ if(ok) layoutGlobe(); drawTimeline(); };
-  relayout(); if(ok){ const f=Player.s.focus; camera.position.set(f.x,f.y+0.25,f.z).normalize().multiplyScalar(baseDist); }
+  relayout(); if(ok){ const f=Player.s.focus; camera.position.set(f.x,f.y+0.25,f.z).normalize().multiplyScalar(baseDist); if(!RM) Cam.intro={t:0,dur:4.2,k:2.1}; }
   addEventListener('resize',relayout); mqMobile.addEventListener && mqMobile.addEventListener('change',relayout);
   if(document.fonts && document.fonts.ready) document.fonts.ready.then(relayout);
   if(window.ResizeObserver){ const ro=new ResizeObserver(()=>relayout()); ro.observe($('#topbar')); ro.observe($('#deck')); }
   requestAnimationFrame(frame);
   tryLive();
 }
+if(location.hash==='#debug') window.EBPM={Sound,Voice,Samples,Player,Heart,UI,Cam,U,Tag,ECG,FX,SCENES,spec,emitQuake,clockNow,get camera(){ return camera; }};
 boot();
 })();
 </script>
