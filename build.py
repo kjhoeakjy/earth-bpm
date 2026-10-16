@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Earth BPM 빌드 스크립트.
+"""지구 연주(Earth Yonju) 빌드 스크립트.
 
 data/*.csv(USGS 실시간 피드·FDSN 카탈로그의 지진 기록, NOAA NCEI 세계 쓰나미 데이터베이스의 쓰나미 기록)와
 data/land.json(world-atlas 110m 육지 윤곽)을 src/earth-bpm.template.html에 넣어
@@ -381,7 +381,7 @@ def standalone(html):
     return ('<!doctype html>\n<html lang="ko">\n<head>\n<meta charset="utf-8">\n'
             '<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">\n'
             '<meta name="theme-color" content="#03040a">\n'
-            '<meta name="description" content="1900년 이후 USGS 지진 기록과 NOAA 쓰나미 기록을 3D 지구와 소리로 듣는 Earth BPM">\n'
+            '<meta name="description" content="최근 24시간과 1900년 이후의 USGS 지진 기록, NOAA 쓰나미 기록을 3D 지구와 소리로 듣는 지구 연주(Earth Yonju)">\n'
             f'{head}\n</head>\n<body>\n{body}\n</body>\n</html>\n')
 
 

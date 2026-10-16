@@ -1,4 +1,4 @@
-<title>Earth BPM</title>
+<title>지구 연주 · Earth Yonju</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -40,7 +40,7 @@ button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid var(-
 #topbar>*{pointer-events:auto}
 .brand{display:flex;flex-direction:column;gap:6px;min-width:0}
 .logo{font:300 30px/1 var(--f-display);letter-spacing:-.01em;display:flex;align-items:baseline;gap:8px;text-shadow:0 2px 18px rgba(0,0,0,.6)}
-.logo b{font:600 22px/1 var(--f-mono);letter-spacing:.06em;color:var(--heart)}
+.logo b{font:italic 500 1em/1 var(--f-display);letter-spacing:-.01em;color:var(--heart)} /* leans like an expression mark in a score */
 .clock{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 12px;font-family:var(--f-mono);font-variant-numeric:tabular-nums;text-shadow:0 1px 10px rgba(0,0,0,.7)}
 #clockDate{font-size:13px;color:var(--ink-2)}
 #clockTime{font-size:22px;font-weight:500;letter-spacing:.02em}
@@ -177,7 +177,7 @@ h3{margin:0;font:500 15px/1.3 var(--f-display);text-wrap:balance}
 .gate-card{max-width:560px;margin-block:auto;text-align:center;word-break:keep-all;display:flex;flex-direction:column;align-items:center;gap:14px}
 .gate-eyebrow{font:500 11px/1 var(--f-mono);letter-spacing:.18em;text-transform:uppercase;color:var(--ink-2);line-height:1.5;text-wrap:balance}
 .gate-card h1{margin:0;font:300 clamp(48px,9vw,84px)/1 var(--f-display);letter-spacing:-.02em;text-shadow:0 4px 40px rgba(0,0,0,.8)}
-.gate-card h1 b{font:600 .62em/1 var(--f-mono);color:var(--heart);letter-spacing:.06em;margin-left:.15em;text-shadow:0 0 30px rgba(255,61,110,.6)}
+.gate-card h1 b{font:italic 500 1em/1 var(--f-display);color:var(--heart);letter-spacing:-.02em;text-shadow:0 0 30px rgba(255,61,110,.6)}
 .gate-card p{margin:0;color:var(--ink-2);font-size:15px;max-width:44ch;text-wrap:balance;text-shadow:0 1px 12px rgba(0,0,0,.9)}
 .gate-card .now-bpm{font:500 15px/1.4 var(--f-body);color:var(--ink)}
 .gate-card .now-bpm b{font-family:var(--f-mono);color:var(--heart);font-size:17px}
@@ -298,7 +298,7 @@ h3{margin:0;font:500 15px/1.3 var(--f-display);text-wrap:balance}
 /* ---------- mobile ---------- */
 @media (max-width:979px){
   #hud{grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(0,1fr) auto auto;row-gap:8px;padding-block:10px 10px}
-  .logo{font-size:24px}.logo b{font-size:17px}
+  .logo{font-size:24px}
   #clockTime{font-size:17px}#clockDate{font-size:12px}
   .bpm{padding:8px 12px;column-gap:9px}
   .bpm .heart{width:26px;height:24px}
@@ -346,7 +346,7 @@ h3{margin:0;font:500 15px/1.3 var(--f-display);text-wrap:balance}
   <div id="hud" class="gated">
     <div id="topbar">
       <div class="brand">
-        <div class="logo">Earth <b>BPM</b></div>
+        <div class="logo">Earth <b>Yonju</b></div>
         <div class="clock"><span id="clockDate">–</span><span id="clockTime">--:--:--</span><span class="kst">KST</span></div>
         <div class="chips"><span class="pill scene-pill" id="sceneTag"><b>NOW</b> 최근 24시간</span><span class="pill" id="srcChip"><span class="dot"></span><span id="srcText">USGS 기록</span></span><button class="pill live-go" id="liveBtn" hidden>지금으로 가기 →</button></div>
       </div>
@@ -358,8 +358,8 @@ h3{margin:0;font:500 15px/1.3 var(--f-display);text-wrap:balance}
       </div>
     </div>
 
-    <aside id="panel" class="glass" aria-label="Earth BPM 메뉴">
-      <div class="sheet-head"><span>EARTH BPM</span><button id="sheetClose" aria-label="메뉴 닫기">✕</button></div>
+    <aside id="panel" class="glass" aria-label="지구 연주 메뉴">
+      <div class="sheet-head"><span>EARTH YONJU</span><button id="sheetClose" aria-label="메뉴 닫기">✕</button></div>
       <nav class="tabs" role="tablist">
         <button role="tab" id="tab-time" aria-controls="pane-time" aria-selected="true" data-tab="time">기록</button>
         <button role="tab" id="tab-voice" aria-controls="pane-voice" aria-selected="false" data-tab="voice">악기</button>
@@ -434,7 +434,7 @@ h3{margin:0;font:500 15px/1.3 var(--f-display);text-wrap:balance}
   <div id="gate" role="dialog" aria-modal="true" aria-labelledby="gateTitle">
     <div class="gate-card">
       <div class="gate-eyebrow">USGS 지진 · NOAA 쓰나미 · 3D 지구 · 입체 음향</div>
-      <h1 id="gateTitle">Earth<b>BPM</b></h1>
+      <h1 id="gateTitle">Earth <b>Yonju</b></h1>
       <svg class="gate-ecg" viewBox="0 0 520 48" aria-hidden="true"><path class="base" pathLength="1" d="M0 30H150l8-5 8 5h20l5 4 9-30 9 38 6-12h22q14-11 28 0h36l8-5 8 5h20l5 4 9-30 9 38 6-12h22q14-11 28 0h66"/><path class="run" pathLength="1" d="M0 30H150l8-5 8 5h20l5 4 9-30 9 38 6-12h22q14-11 28 0h36l8-5 8 5h20l5 4 9-30 9 38 6-12h22q14-11 28 0h66"/></svg>
       <p id="gateLede">지난 24시간 동안 일어난 지진을 음으로 바꿔 지구의 심장 소리로 들려 드립니다.</p>
       <p class="now-bpm" id="gateBpm"></p>

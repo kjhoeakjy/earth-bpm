@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """전자키보드 음색 샘플 만들기.
 
-FluidR3 GM 사운드폰트(Frank Wen, MIT 라이선스)의 악기로 Earth BPM이 쓰는 음(라단조 5음 음계,
+FluidR3 GM 사운드폰트(Frank Wen, MIT 라이선스)의 악기로 지구 연주가 쓰는 음(라단조 5음 음계,
 A1~D7)을 하나씩 연주해 악기마다 MP3 한 개(음 하나당 칸 하나)로 저장한다.
 
 필요: fluidsynth, ffmpeg, FluidR3_GM.sf2
