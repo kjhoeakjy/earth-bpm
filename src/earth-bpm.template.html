@@ -1,0 +1,1441 @@
+<title>Earth BPM</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hahmlet:wght@300;500;700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap">
+<style>
+/* Layout: the globe is a full-bleed night stage; the instruments dock to its edges like an observatory console. */
+:root{
+  color-scheme:dark;
+  --void:#03040a;
+  --ink:#eef1f8; --ink-2:#a9b1c8; --ink-3:#6c7594;
+  --glass:rgba(9,12,26,.68); --glass-hi:rgba(22,28,52,.78);
+  --line:rgba(150,170,255,.13); --line-2:rgba(150,170,255,.28);
+  --heart:#ff3d6e; --heart-ink:#1a0309; --gold:#ffd27a; --abyss:#47e5ff;
+  --q:#ffb15e;
+  --f-display:'Hahmlet','Noto Serif KR','AppleMyungjo',serif;
+  --f-body:'IBM Plex Sans KR','Apple SD Gothic Neo','Malgun Gothic',system-ui,sans-serif;
+  --f-mono:'IBM Plex Mono',ui-monospace,'SFMono-Regular',Menlo,Consolas,monospace;
+  --r:14px;
+}
+html,body{height:100%}
+[hidden]{display:none!important}
+body{margin:0;background:var(--void);color:var(--ink);font:14px/1.55 var(--f-body);overflow:hidden;-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent}
+button{font:inherit;color:inherit}
+button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid var(--abyss);outline-offset:2px}
+#app{position:relative;height:100%;overflow:hidden;isolation:isolate}
+#gl{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:grab}
+#gl.picking{cursor:crosshair}
+#gl:active{cursor:grabbing}
+
+/* ---------- HUD grid ---------- */
+#hud{position:absolute;inset:0;display:grid;grid-template-columns:minmax(0,1fr) 352px;grid-template-rows:auto minmax(0,1fr) auto;column-gap:20px;row-gap:14px;padding-block:18px 14px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));pointer-events:none;z-index:2}
+#hud>*{pointer-events:auto}
+.glass{background:var(--glass);border:1px solid var(--line);border-radius:var(--r);backdrop-filter:blur(14px) saturate(140%);-webkit-backdrop-filter:blur(14px) saturate(140%)}
+
+/* ---------- top bar ---------- */
+#topbar{grid-column:1/-1;grid-row:1;display:flex;justify-content:space-between;align-items:flex-start;gap:16px;pointer-events:none}
+#topbar>*{pointer-events:auto}
+.brand{display:flex;flex-direction:column;gap:6px;min-width:0}
+.logo{font:300 30px/1 var(--f-display);letter-spacing:-.01em;display:flex;align-items:baseline;gap:8px;text-shadow:0 2px 18px rgba(0,0,0,.6)}
+.logo b{font:600 22px/1 var(--f-mono);letter-spacing:.06em;color:var(--heart)}
+.clock{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 12px;font-family:var(--f-mono);font-variant-numeric:tabular-nums;text-shadow:0 1px 10px rgba(0,0,0,.7)}
+#clockDate{font-size:13px;color:var(--ink-2)}
+#clockTime{font-size:22px;font-weight:500;letter-spacing:.02em}
+.kst{font-size:11px;color:var(--ink-3);letter-spacing:.08em}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.pill{display:inline-flex;align-items:center;gap:6px;font:500 11.5px/1 var(--f-body);padding:6px 9px;border-radius:999px;background:rgba(10,14,30,.55);border:1px solid var(--line);color:var(--ink-2);white-space:nowrap}
+.pill .dot{width:6px;height:6px;border-radius:50%;background:var(--ink-3)}
+.pill.live .dot{background:#5dff9d;box-shadow:0 0 8px #5dff9d}
+.pill.scene{color:var(--ink)}
+.pill.scene b{font-family:var(--f-mono);font-weight:600;color:var(--gold)}
+
+.bpm{display:grid;grid-template-columns:auto auto;align-items:center;column-gap:12px;padding:10px 16px 10px 14px}
+.bpm .heart{width:34px;height:31px;fill:var(--heart);filter:drop-shadow(0 0 10px rgba(255,61,110,.65));transform-origin:50% 60%}
+.bpm-num{font:600 40px/1 var(--f-mono);font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.bpm-num small{font-size:13px;font-weight:500;color:var(--ink-2);margin-left:6px;letter-spacing:.08em}
+.bpm-sub{grid-column:1/-1;font-size:12px;color:var(--ink-2);margin-top:6px;display:flex;justify-content:space-between;gap:10px}
+.bpm-sub b{color:var(--ink);font-weight:500}
+
+/* ---------- panel ---------- */
+#panel{grid-column:2;grid-row:2;align-self:start;max-height:100%;min-height:0;display:flex;flex-direction:column;overflow:hidden}
+.sheet-head{display:none}
+.tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:2px;padding:6px;border-bottom:1px solid var(--line)}
+.tabs button{background:none;border:0;padding:9px 4px;border-radius:9px;font-size:12.5px;color:var(--ink-2);cursor:pointer;white-space:nowrap}
+.tabs button[aria-selected="true"]{background:rgba(150,170,255,.12);color:var(--ink)}
+.tabs button:hover{color:var(--ink)}
+.pane{overflow:auto;min-height:0;padding:14px 16px 16px;display:flex;flex-direction:column;gap:12px;scrollbar-width:thin;scrollbar-color:rgba(150,170,255,.25) transparent}
+.pane>*{flex-shrink:0}
+.lede{margin:0;color:var(--ink-2);font-size:13px}
+.memo{margin:0;color:var(--ink-3);font-size:12px;border-top:1px solid var(--line);padding-top:10px}
+h3{margin:0;font:500 15px/1.3 var(--f-display);text-wrap:balance}
+.eyebrow{font:500 10.5px/1 var(--f-mono);letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3)}
+
+.scene-list{display:flex;flex-direction:column;gap:6px}
+.scene{display:grid;grid-template-columns:52px minmax(0,1fr) auto;align-items:center;gap:10px;text-align:left;background:rgba(255,255,255,.02);border:1px solid var(--line);border-radius:11px;padding:9px 11px;cursor:pointer;transition:border-color .2s,background .2s}
+.scene:hover{border-color:var(--line-2);background:rgba(150,170,255,.06)}
+.scene[aria-pressed="true"]{border-color:rgba(255,61,110,.55);background:rgba(255,61,110,.08)}
+.sc-year{font:600 15px/1 var(--f-mono);color:var(--gold);letter-spacing:.02em}
+.sc-body{display:flex;flex-direction:column;min-width:0}
+.sc-title{font:500 14px/1.3 var(--f-display);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sc-meta{font-size:11.5px;color:var(--ink-3)}
+.sc-mag{font:600 13px/1 var(--f-mono);color:var(--ink-2)}
+.scene-detail{border-left:2px solid var(--heart);padding:2px 0 2px 12px;display:flex;flex-direction:column;gap:4px}
+.scene-detail p{margin:0;font-size:13px;color:var(--ink-2)}
+.scene-detail .filter{font:500 11.5px/1.4 var(--f-mono);color:var(--ink-3)}
+
+.diary{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px}
+.diary li{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 10px;align-items:center;padding:9px 0;border-bottom:1px solid var(--line)}
+.diary li:last-child{border-bottom:0}
+.diary .k{font-size:11.5px;color:var(--ink-3);grid-column:1}
+.diary .v{grid-column:1;font-size:13.5px;line-height:1.45}
+.diary .v b{font-family:var(--f-mono);font-weight:600}
+.diary .go{grid-column:2;grid-row:1/span 2}
+.headline{font:500 18px/1.4 var(--f-display);margin:0;text-wrap:balance}
+.headline b{font-family:var(--f-mono);color:var(--heart);font-weight:600}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--line-2);background:rgba(150,170,255,.06);border-radius:999px;padding:7px 12px;font-size:12.5px;cursor:pointer;white-space:nowrap;transition:background .2s,border-color .2s}
+.btn:hover{background:rgba(150,170,255,.14)}
+.btn.small{padding:5px 10px;font-size:12px}
+.btn.heart{background:var(--heart);border-color:var(--heart);color:var(--heart-ink);font-weight:600}
+.btn.heart:hover{background:#ff6187}
+
+.regions{display:flex;flex-wrap:wrap;gap:6px}
+.regions .btn{font-size:12px;padding:6px 10px}
+.pet{display:grid;grid-template-columns:54px minmax(0,1fr);gap:12px;align-items:center}
+.pet-face{width:54px;height:54px;border-radius:50%;display:grid;place-items:center;background:radial-gradient(circle at 50% 40%,rgba(255,61,110,.35),rgba(255,61,110,.05) 70%);border:1px solid rgba(255,61,110,.4)}
+.pet-face svg{width:28px;height:26px;fill:var(--heart)}
+.pet input{width:100%;box-sizing:border-box;background:transparent;border:0;border-bottom:1px dashed var(--line-2);color:var(--ink);font:500 18px/1.3 var(--f-display);padding:2px 0}
+.pet .where{font-size:12px;color:var(--ink-3)}
+.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.stat{border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+.stat b{display:block;font:600 18px/1.2 var(--f-mono);font-variant-numeric:tabular-nums}
+.stat span{font-size:11px;color:var(--ink-3)}
+.persona{margin:0;font-size:13.5px;color:var(--ink);background:rgba(255,61,110,.07);border-radius:10px;padding:10px 12px}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+
+.voice-list{display:flex;flex-direction:column;gap:8px}
+.voice{display:grid;grid-template-columns:14px minmax(0,1fr) auto;gap:10px;align-items:center}
+.voice i{width:12px;height:12px;border-radius:50%;box-shadow:0 0 10px currentColor;background:currentColor}
+.voice .vn{font-weight:500}
+.voice .vr{font:11px var(--f-mono);color:var(--ink-3);margin-left:6px}
+.voice p{margin:0;font-size:12px;color:var(--ink-2)}
+.scale{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:4px}
+.scale div{text-align:center;border:1px solid var(--line);border-radius:8px;padding:6px 2px;display:flex;flex-direction:column;gap:2px}
+.scale b{font:600 13px/1.1 var(--f-mono)}
+.scale span{font-size:11px;color:var(--ink-3)}
+.depthbar{height:10px;border-radius:5px;background:linear-gradient(90deg,#ffdb85,#ff9a3d 8%,#ff4f5e 20%,#e04bd0 38%,#8f6bff 58%,#4f8dff 78%,#47e5ff)}
+.depthticks{display:flex;justify-content:space-between;font:11px var(--f-mono);color:var(--ink-3)}
+.src-note{font-size:11.5px;color:var(--ink-3);margin:0}
+.src-note a{color:var(--ink-2)}
+
+/* ---------- now card ---------- */
+#now{grid-column:1;grid-row:2;align-self:end;justify-self:start;width:min(470px,100%);box-sizing:border-box;display:grid;grid-template-columns:auto minmax(0,1fr) 10px;gap:14px;align-items:stretch;padding:12px 14px;position:relative;overflow:hidden}
+#now::before{content:"";position:absolute;inset:0 auto 0 0;width:3px;background:var(--q);box-shadow:0 0 18px var(--q)}
+.now-mag{display:flex;flex-direction:column;justify-content:center;min-width:64px}
+.now-mag .m{font:500 11px/1 var(--f-mono);color:var(--ink-3);letter-spacing:.12em}
+#nowMag{font:600 38px/1 var(--f-mono);font-variant-numeric:tabular-nums;color:var(--q);text-shadow:0 0 22px color-mix(in srgb,var(--q) 55%,transparent)}
+.now-body{min-width:0;display:flex;flex-direction:column;gap:3px}
+#nowPlace{font:500 15px/1.35 var(--f-display);text-wrap:balance}
+#nowOrig{font-size:11.5px;color:var(--ink-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.now-meta{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:12px;color:var(--ink-2);margin-top:2px}
+.now-meta span{white-space:nowrap}
+.now-meta a{color:var(--ink-2);text-decoration:none;border-bottom:1px solid var(--line-2)}
+.now-meta a:hover{color:var(--ink)}
+.gauge{position:relative;border-radius:5px;background:linear-gradient(180deg,#ffdb85,#ff9a3d 8%,#ff4f5e 20%,#e04bd0 38%,#8f6bff 58%,#4f8dff 78%,#47e5ff);opacity:.85}
+.gauge i{position:absolute;left:-4px;right:-4px;height:3px;border-radius:2px;background:#fff;box-shadow:0 0 8px #fff;top:0;transition:top .5s cubic-bezier(.2,.8,.2,1)}
+
+/* ---------- deck ---------- */
+#deck{grid-column:1/-1;grid-row:3;display:flex;flex-direction:column;gap:8px;padding:10px 12px 10px}
+#seismo{display:block;width:100%;height:46px}
+.deck-row{display:flex;align-items:center;gap:12px;min-width:0}
+.play{flex:none;width:48px;height:48px;border-radius:50%;border:0;background:var(--heart);color:var(--heart-ink);display:grid;place-items:center;cursor:pointer;box-shadow:0 0 0 0 rgba(255,61,110,.5);transition:transform .15s}
+.play:hover{transform:scale(1.05)}
+.play svg{width:18px;height:18px;fill:currentColor}
+.tl-wrap{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+#timeline{display:block;width:100%;height:40px;cursor:pointer;touch-action:none}
+.tl-labels{display:flex;justify-content:space-between;font:11px/1 var(--f-mono);color:var(--ink-3);font-variant-numeric:tabular-nums}
+.deck-btns{flex:none;display:flex;gap:6px}
+.chip{border:1px solid var(--line-2);background:rgba(150,170,255,.05);border-radius:999px;padding:7px 11px;font-size:12px;cursor:pointer;white-space:nowrap;color:var(--ink-2)}
+.chip:hover{color:var(--ink);background:rgba(150,170,255,.12)}
+.chip[aria-pressed="true"]{color:var(--ink);border-color:rgba(71,229,255,.55);background:rgba(71,229,255,.10)}
+.only-mobile{display:none}
+
+/* ---------- overlays ---------- */
+#gate{position:absolute;inset:0;z-index:10;display:grid;place-items:center;padding-block:24px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));background:radial-gradient(ellipse at 50% 45%,rgba(3,4,10,.15),rgba(3,4,10,.78) 75%);transition:opacity .9s ease}
+#gate.out{opacity:0;pointer-events:none}
+.gate-card{max-width:560px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:14px}
+.gate-eyebrow{font:500 11px/1 var(--f-mono);letter-spacing:.18em;text-transform:uppercase;color:var(--ink-2)}
+.gate-card h1{margin:0;font:300 clamp(48px,9vw,84px)/1 var(--f-display);letter-spacing:-.02em;text-shadow:0 4px 40px rgba(0,0,0,.8)}
+.gate-card h1 b{font:600 .62em/1 var(--f-mono);color:var(--heart);letter-spacing:.06em;margin-left:.15em;text-shadow:0 0 30px rgba(255,61,110,.6)}
+.gate-card p{margin:0;color:var(--ink-2);font-size:15px;max-width:44ch;text-wrap:balance;text-shadow:0 1px 12px rgba(0,0,0,.9)}
+.gate-card .now-bpm{font:500 15px/1.4 var(--f-body);color:var(--ink)}
+.gate-card .now-bpm b{font-family:var(--f-mono);color:var(--heart);font-size:17px}
+.gate-actions{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:6px}
+.primary{border:0;border-radius:999px;padding:14px 26px;background:var(--heart);color:var(--heart-ink);font-weight:600;font-size:15.5px;cursor:pointer;box-shadow:0 0 40px rgba(255,61,110,.45);display:inline-flex;align-items:center;gap:10px}
+.primary svg{width:18px;height:17px;fill:currentColor}
+.ghost{border:1px solid var(--line-2);border-radius:999px;padding:13px 22px;background:rgba(10,14,30,.5);color:var(--ink);font-size:15px;cursor:pointer}
+.gate-hint{font-size:12.5px!important;color:var(--ink-3)!important}
+
+#caption{position:absolute;left:50%;top:22%;transform:translate(-50%,10px);z-index:5;text-align:center;pointer-events:none;opacity:0;padding:18px 28px 22px;background:radial-gradient(ellipse at 50% 50%,rgba(3,4,10,.72),rgba(3,4,10,.38) 55%,rgba(3,4,10,0) 75%);transition:opacity .6s ease,transform .8s cubic-bezier(.2,.8,.2,1);width:min(92vw,720px)}
+#caption.show{opacity:1;transform:translate(-50%,0)}
+.cap-mag{font:600 clamp(40px,7vw,72px)/1 var(--f-mono);letter-spacing:-.02em;color:#fff;text-shadow:0 0 40px var(--q),0 0 90px var(--q)}
+.cap-title{font:500 clamp(18px,2.6vw,26px)/1.3 var(--f-display);margin-top:8px;text-shadow:0 2px 20px rgba(0,0,0,.9);text-wrap:balance}
+.cap-sub{font:13px var(--f-mono);color:var(--ink-2);margin-top:6px;text-shadow:0 1px 10px rgba(0,0,0,.9)}
+#toast{position:absolute;left:50%;top:max(84px,calc(env(safe-area-inset-top,0px) + 84px));transform:translate(-50%,-8px);z-index:6;opacity:0;transition:opacity .35s,transform .35s;pointer-events:none;background:rgba(40,8,20,.82);border:1px solid rgba(255,61,110,.55);color:#ffe3ea;border-radius:999px;padding:8px 16px;font-size:13px;white-space:nowrap;max-width:92vw;overflow:hidden;text-overflow:ellipsis;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+#toast.show{opacity:1;transform:translate(-50%,0)}
+#pickHint{position:absolute;left:50%;bottom:30%;transform:translateX(-50%);z-index:6;pointer-events:none}
+.nogl{position:absolute;inset:0;display:grid;place-items:center;color:var(--ink-3);font-size:13px;padding:24px;text-align:center}
+
+/* ---------- mobile ---------- */
+@media (max-width:979px){
+  #hud{grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(0,1fr) auto auto;row-gap:8px;padding-block:10px 10px}
+  .logo{font-size:24px}.logo b{font-size:17px}
+  #clockTime{font-size:17px}#clockDate{font-size:12px}
+  .bpm{padding:8px 12px;column-gap:9px}
+  .bpm .heart{width:26px;height:24px}
+  .bpm-num{font-size:30px}
+  .bpm-sub{display:none}
+  #now{grid-row:3;grid-column:1;width:100%;padding:10px 12px;gap:12px}
+  #nowMag{font-size:30px}
+  .now-mag{min-width:52px}
+  #nowPlace{font-size:14px}
+  #deck{grid-row:4;padding:8px 10px}
+  #seismo{height:32px}
+  .play{width:44px;height:44px}
+  .deck-row{flex-wrap:wrap;row-gap:8px}
+  .tl-wrap{flex-basis:calc(100% - 60px)}
+  .deck-btns{flex:1 1 100%;overflow-x:auto;scrollbar-width:none}
+  .only-mobile{display:inline-block}
+  .chip.only-mobile{border-color:rgba(255,61,110,.6);color:var(--ink)}
+  #panel{position:fixed;left:0;right:0;bottom:0;max-height:74%;z-index:20;border-radius:18px 18px 0 0;transform:translateY(104%);transition:transform .38s cubic-bezier(.2,.8,.2,1);padding-bottom:env(safe-area-inset-bottom,0px);padding-left:max(0px,env(safe-area-inset-left,0px));padding-right:max(0px,env(safe-area-inset-right,0px));background:var(--glass-hi)}
+  #panel.open{transform:none;box-shadow:0 -20px 60px rgba(0,0,0,.6)}
+  .sheet-head{display:flex;justify-content:space-between;align-items:center;padding:10px 16px 0}
+  .sheet-head span{font:500 12px var(--f-mono);letter-spacing:.12em;color:var(--ink-3)}
+  .sheet-head button{background:none;border:1px solid var(--line-2);border-radius:999px;width:32px;height:32px;cursor:pointer;color:var(--ink)}
+  #caption{top:20%}
+}
+@media (max-width:420px){.chips .pill.scene{max-width:62vw;overflow:hidden;text-overflow:ellipsis}}
+@media (prefers-reduced-motion:reduce){#gate,#caption,#toast,#panel{transition:none}}
+</style>
+
+<div id="app">
+  <canvas id="gl" aria-label="실제 지진 위치가 표시된 3D 지구. 끌어서 돌리고, 지진 점을 누르면 그 소리를 들을 수 있어요."></canvas>
+
+  <div id="hud">
+    <div id="topbar">
+      <div class="brand">
+        <div class="logo">Earth <b>BPM</b></div>
+        <div class="clock"><span id="clockDate">–</span><span id="clockTime">--:--:--</span><span class="kst">KST</span></div>
+        <div class="chips"><span class="pill scene" id="sceneTag"><b>NOW</b> 지금 이 순간</span><span class="pill" id="srcChip"><span class="dot"></span><span id="srcText">USGS 기록</span></span></div>
+      </div>
+      <div class="bpm glass" id="bpmBox" aria-label="지구의 심박수">
+        <svg class="heart" id="heartIcon" viewBox="0 0 32 29" aria-hidden="true"><path d="M16 28.5C6 21 0 15.5 0 8.6 0 3.6 3.9 0 8.6 0c3 0 5.8 1.6 7.4 4.2C17.6 1.6 20.4 0 23.4 0 28.1 0 32 3.6 32 8.6 32 15.5 26 21 16 28.5z"/></svg>
+        <div class="bpm-num"><span id="bpmNum">--</span><small>BPM</small></div>
+        <div class="bpm-sub"><span>지구의 맥박</span><b id="bpmMood">평온해요</b></div>
+      </div>
+    </div>
+
+    <aside id="panel" class="glass" aria-label="Earth BPM 메뉴">
+      <div class="sheet-head"><span>EARTH BPM</span><button id="sheetClose" aria-label="메뉴 닫기">✕</button></div>
+      <nav class="tabs" role="tablist">
+        <button role="tab" id="tab-time" aria-controls="pane-time" aria-selected="true" data-tab="time">시간 여행</button>
+        <button role="tab" id="tab-adopt" aria-controls="pane-adopt" aria-selected="false" data-tab="adopt">내 지진대</button>
+        <button role="tab" id="tab-diary" aria-controls="pane-diary" aria-selected="false" data-tab="diary">지구 일기</button>
+        <button role="tab" id="tab-sound" aria-controls="pane-sound" aria-selected="false" data-tab="sound">소리 지도</button>
+      </nav>
+      <div class="pane" id="pane-time" role="tabpanel" aria-labelledby="tab-time">
+        <p class="lede">지금의 지구, 그리고 기록으로 남은 그날의 지구. 골라서 그때 지구가 어떤 소리를 냈을지 들어보세요.</p>
+        <div class="scene-detail" id="sceneDetail"></div>
+        <div class="scene-list" id="sceneList"></div>
+        <p class="memo">과거 기록에는 많은 사람의 아픔이 함께 남아 있어요. 그날을 기억하는 마음으로 들어주세요.</p>
+      </div>
+      <div class="pane" id="pane-adopt" role="tabpanel" aria-labelledby="tab-adopt" hidden></div>
+      <div class="pane" id="pane-diary" role="tabpanel" aria-labelledby="tab-diary" hidden></div>
+      <div class="pane" id="pane-sound" role="tabpanel" aria-labelledby="tab-sound" hidden>
+        <p class="lede">지진 하나가 음표 하나예요. 무엇이 어떤 소리가 되는지 정리했어요. 단추를 누르면 미리 들어볼 수 있어요.</p>
+        <div><div class="eyebrow">규모 → 음높이</div></div>
+        <p class="lede" style="margin-top:-6px">클수록 낮은 음이에요. 화음이 어긋나지 않게 라단조 5음 음계에 맞췄어요.</p>
+        <div class="scale" id="scaleRow"></div>
+        <div><div class="eyebrow">깊이 → 음색</div></div>
+        <div class="depthbar" aria-hidden="true"></div>
+        <div class="depthticks"><span>0</span><span>20</span><span>100</span><span>300</span><span>700 km</span></div>
+        <div class="voice-list" id="voiceList"></div>
+        <div><div class="eyebrow">위치 → 방향</div></div>
+        <p class="lede" style="margin-top:-6px">화면 왼쪽에서 난 지진은 왼쪽 귀에서 들려요. 지구 반대편 지진은 벽 너머처럼 먹먹하게 들려요.</p>
+        <div><div class="eyebrow">활동량 → 심박</div></div>
+        <p class="lede" style="margin-top:-6px">재생 중인 시각 기준으로 직전 한 시간 동안 지진이 많고 클수록 심장이 빨리 뛰어요. 큰 지진이 오면 한 박자 멎었다가 크게 뛰어요.</p>
+        <p class="src-note" id="srcNote"></p>
+      </div>
+    </aside>
+
+    <section id="now" class="glass" aria-live="polite">
+      <div class="now-mag"><span class="m">규모</span><span id="nowMag">–</span></div>
+      <div class="now-body">
+        <div id="nowPlace">재생하면 지진이 하나씩 울려요</div>
+        <div id="nowOrig">지구 위의 점을 누르면 그 지진만 따로 들을 수 있어요</div>
+        <div class="now-meta"><span id="nowWhen"></span><span id="nowDepth"></span><span id="nowVoice"></span><a id="nowLink" href="https://earthquake.usgs.gov/earthquakes/map/" target="_blank" rel="noopener">USGS 기록 ↗</a></div>
+      </div>
+      <div class="gauge" title="깊이 (0–700 km)"><i id="gaugeMark"></i></div>
+    </section>
+
+    <footer id="deck" class="glass">
+      <canvas id="seismo" aria-hidden="true"></canvas>
+      <div class="deck-row">
+        <button id="playBtn" class="play" aria-label="재생"><svg viewBox="0 0 18 18" aria-hidden="true"><path id="playIcon" d="M4 2.5v13l11-6.5z"/></svg></button>
+        <div class="tl-wrap">
+          <canvas id="timeline" aria-label="재생 위치. 눌러서 원하는 시각으로 이동해요."></canvas>
+          <div class="tl-labels"><span id="tlStart"></span><span id="tlCount"></span><span id="tlEnd"></span></div>
+        </div>
+        <div class="deck-btns">
+          <button id="menuBtn" class="chip only-mobile" aria-expanded="false">시간 여행 · 메뉴</button>
+          <button id="speedBtn" class="chip" title="재생 속도">보통 속도</button>
+          <button id="xrayBtn" class="chip" aria-pressed="false" title="지구를 투명하게 해서 지진이 난 깊이를 봐요">지구 속 보기</button>
+          <button id="followBtn" class="chip" aria-pressed="true" title="카메라가 지진을 따라가요">따라가기</button>
+          <button id="muteBtn" class="chip" aria-pressed="false">소리 끄기</button>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <div id="caption" aria-live="polite"><div class="cap-mag" id="capMag"></div><div class="cap-title" id="capTitle"></div><div class="cap-sub" id="capSub"></div></div>
+  <div id="toast" role="status"></div>
+  <div id="pickHint" class="pill" hidden>지구 위 원하는 곳을 눌러 입양하세요</div>
+
+  <div id="gate" role="dialog" aria-modal="true" aria-labelledby="gateTitle">
+    <div class="gate-card">
+      <div class="gate-eyebrow">USGS 실제 지진 기록 · 3D 지구 · 입체 음향</div>
+      <h1 id="gateTitle">Earth<b>BPM</b></h1>
+      <p id="gateLede">지난 24시간 동안 지구가 몸을 떤 순간들을 음표로 바꿔, 지구의 심장 소리로 들려드려요.</p>
+      <p class="now-bpm" id="gateBpm"></p>
+      <div class="gate-actions">
+        <button id="startBtn" class="primary"><svg viewBox="0 0 32 29" aria-hidden="true"><path d="M16 28.5C6 21 0 15.5 0 8.6 0 3.6 3.9 0 8.6 0c3 0 5.8 1.6 7.4 4.2C17.6 1.6 20.4 0 23.4 0 28.1 0 32 3.6 32 8.6 32 15.5 26 21 16 28.5z"/></svg>심장 소리 듣기</button>
+        <button id="silentBtn" class="ghost">소리 없이 보기</button>
+      </div>
+      <p class="gate-hint">이어폰을 끼면 지진이 난 쪽에서 소리가 들려요. 큰 지진은 낮은 음, 깊은 지진은 길고 부드러운 소리로 울려요.</p>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
+<script>
+(function(){
+'use strict';
+const DATA = /*__DATA__*/null;
+const $ = s => document.querySelector(s);
+const clamp = (x,a,b) => x<a?a:x>b?b:x;
+const lerp = (a,b,t) => a+(b-a)*t;
+const DEG = Math.PI/180;
+const RM = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const mqMobile = matchMedia('(max-width: 979px)');
+const COARSE = matchMedia('(pointer: coarse)').matches;
+const store = {
+  get(k,d){ try{ const v=localStorage.getItem('ebpm.'+k); return v==null?d:JSON.parse(v); }catch(e){ return d; } },
+  set(k,v){ try{ localStorage.setItem('ebpm.'+k, JSON.stringify(v)); }catch(e){} }
+};
+const HAS3 = typeof THREE !== 'undefined' && THREE.OrbitControls && THREE.EffectComposer && THREE.UnrealBloomPass;
+
+/* ================= Korean text ================= */
+const DIRK = {N:'북',S:'남',E:'동',W:'서'};
+const REGION = {
+  'CA':'캘리포니아','California':'캘리포니아','Alaska':'알래스카','Hawaii':'하와이','Nevada':'네바다','Utah':'유타',
+  'Washington':'워싱턴주','Oregon':'오리건','Texas':'텍사스','New Mexico':'뉴멕시코','Oklahoma':'오클라호마','Kansas':'캔자스',
+  'Montana':'몬태나','Missouri':'미주리','Colorado':'콜로라도','Idaho':'아이다호','Wyoming':'와이오밍','Arizona':'애리조나',
+  'Puerto Rico':'푸에르토리코','U.S. Virgin Islands':'미국령 버진아일랜드','Japan':'일본','Chile':'칠레','Indonesia':'인도네시아',
+  'Panama':'파나마','Russia':'러시아','Tonga':'통가','Fiji':'피지','Philippines':'필리핀','Papua New Guinea':'파푸아뉴기니',
+  'Guatemala':'과테말라','Costa Rica':'코스타리카','Ecuador':'에콰도르','Peru':'페루','Colombia':'콜롬비아','Vanuatu':'바누아투',
+  'Samoa':'사모아','New Zealand':'뉴질랜드','Canada':'캐나다','MX':'멕시코','Mexico':'멕시코','B.C., MX':'멕시코 바하칼리포르니아',
+  'Dominican Republic':'도미니카공화국','Nicaragua':'니카라과','El Salvador':'엘살바도르','Tanzania':'탄자니아','Tajikistan':'타지키스탄',
+  'China':'중국','Kyrgyzstan':'키르기스스탄','India':'인도','Guam':'괌','Greece':'그리스','Italy':'이탈리아','Timor Leste':'동티모르',
+  'New Caledonia':'뉴칼레도니아','Turkey':'튀르키예','Syria':'시리아','Nepal':'네팔','Myanmar':'미얀마','South Korea':'대한민국',
+  'Taiwan':'대만','Kazakhstan':'카자흐스탄','Argentina':'아르헨티나','Saudi Arabia':'사우디아라비아','Solomon Islands':'솔로몬 제도',
+  'Somalia':'소말리아','Afghanistan':'아프가니스탄','Wallis and Futuna':'왈리스 푸투나','Northern Mariana Islands':'북마리아나 제도',
+  'Iran':'이란','Pakistan':'파키스탄','Honduras':'온두라스','Haiti':'아이티','Cuba':'쿠바','Bolivia':'볼리비아','Venezuela':'베네수엘라',
+  'Iceland':'아이슬란드','Portugal':'포르투갈','Spain':'스페인','Algeria':'알제리','Morocco':'모로코','Ethiopia':'에티오피아','Kenya':'케냐'
+};
+const WHOLE = {
+  'Fiji region':'피지 부근','south of the Fiji Islands':'피지 제도 남쪽','central Mid-Atlantic Ridge':'대서양 중앙 해령 (적도 부근)',
+  'southern Mid-Atlantic Ridge':'대서양 중앙 해령 남부','northern Mid-Atlantic Ridge':'대서양 중앙 해령 북부','Mid-Indian Ridge':'중앙 인도양 해령',
+  'Southwest Indian Ridge':'남서 인도양 해령','southern East Pacific Rise':'동태평양 해팽 남부','central East Pacific Rise':'동태평양 해팽 중부',
+  'southeast of Easter Island':'이스터섬 남동쪽','west of Macquarie Island':'매쿼리섬 서쪽','Macquarie Island region':'매쿼리섬 부근',
+  'Kermadec Islands region':'케르마데크 제도 부근','Kermadec Islands, New Zealand':'뉴질랜드 케르마데크 제도','South Sandwich Islands region':'사우스샌드위치 제도 부근',
+  'Volcano Islands, Japan region':'일본 화산 열도 부근','Izu Islands, Japan region':'일본 이즈 제도 부근','Bonin Islands, Japan region':'일본 오가사와라 제도 부근',
+  'southwestern Ryukyu Islands, Japan':'일본 류큐 열도 남서부','Rat Islands, Aleutian Islands, Alaska':'알래스카 알류샨 열도 (래트 제도)',
+  'off the coast of Ecuador':'에콰도르 앞바다','North Atlantic Ocean':'북대서양','off the east coast of Honshu, Japan':'일본 혼슈 동쪽 앞바다',
+  'near the east coast of Honshu, Japan':'일본 혼슈 동쪽 연안','eastern Honshu, Japan':'일본 혼슈 동부',
+  '2011 Great Tohoku Earthquake, Japan':'동일본 대지진 · 도호쿠 앞바다','2004 Sumatra - Andaman Islands Earthquake':'수마트라-안다만 대지진',
+  'Pazarcik earthquake, Kahramanmaras earthquake sequence':'튀르키예 파자르즉 지진 (카흐라만마라시)',
+  'Elbistan earthquake, Kahramanmaras earthquake sequence':'튀르키예 엘비스탄 지진 (카흐라만마라시)',
+  '2025 Kamchatka Peninsula, Russia Earthquake':'러시아 캄차카반도 대지진','Turkey-Syria border region':'튀르키예·시리아 국경',
+  'Central Turkey':'튀르키예 중부','eastern Turkey':'튀르키예 동부','Adana, Turkey':'튀르키예 아다나','Nicobar Islands, India region':'인도 니코바르 제도 부근',
+  'Maug Islands region, Northern Mariana Islands':'북마리아나 제도 마우그섬 부근','Kuril Islands':'쿠릴 열도','Samoa Islands region':'사모아 제도 부근',
+  'off the coast of Central America':'중앙아메리카 앞바다','Nepal':'네팔','south of Java, Indonesia':'인도네시아 자와섬 남쪽','central Peru':'페루 중부',
+  'Carlsberg Ridge':'칼스버그 해령','Banda Sea':'반다해','Kepulauan Babar, Indonesia':'인도네시아 바바르 제도','Pagan region, Northern Mariana Islands':'북마리아나 제도 파간섬 부근'
+};
+const TOWN = {
+  'Gyeongju':'경주','Ōfunato':'오후나토','Kamaishi':'가마이시','Ishinomaki':'이시노마키','Namie':'나미에','Iwaki':'이와키','Hasaki':'하사키',
+  'Miyako':'미야코','Yamada':'야마다','Ōarai':'오아라이','Kathmandu':'카트만두','Banda Aceh':'반다아체','Sabang':'사방','Meulaboh':'믈라보',
+  'Port Blair':'포트블레어','Petropavlovsk-Kamchatsky':'페트로파블롭스크캄차츠키','Vilyuchinsk':'빌류친스크','Severo-Kuril’sk':'세베로쿠릴스크',
+  'Kahramanmaraş':'카흐라만마라시','Nurdağı':'누르다으','Pazarcık':'파자르즉','Göksun':'괵순','Nurhak':'누르하크','Bharatpur':'바라트푸르',
+  'Nagarkot':'나가르코트','Kodāri':'코다리','Dhulikhel':'둘리켈','Kirtipur':'키르티푸르','Pokhara':'포카라','Kushiro':'구시로','Takahagi':'다카하기',
+  'The Geysers':'더 가이저스','Anza':'안자','Cobb':'코브','Cloverdale':'클로버데일','Pāhala':'파할라','Volcano':'볼케이노','Milford':'밀퍼드',
+  'Lake Minchumina':'레이크 민추미나','Los Asientos':'로스아시엔토스','Río Grande':'리오그란데','La Tronosa':'라트로노사','Kokopo':'코코포'
+};
+function koPlace(p){
+  if(!p) return {main:'위치 정보 없음', sub:''};
+  if(WHOLE[p]) return {main:WHOLE[p], sub:p};
+  const m = p.match(/^(\d+)\s?km ([NSEW]{1,3}) of (.+)$/);
+  if(m){
+    const km=+m[1], dir=m[2].split('').map(c=>DIRK[c]).join('');
+    const rest=m[3], ci=rest.indexOf(', ');
+    const town = ci<0? rest : rest.slice(0,ci);
+    const region = ci<0? '' : rest.slice(ci+2);
+    const rk = REGION[region] || region;
+    const tk = TOWN[town] || town;
+    const where = km===0 ? tk+' 바로 앞' : `${tk} ${dir}쪽 ${km}km`;
+    return {main:(rk? rk+' · ':'')+where, sub:p, region:rk, town:tk};
+  }
+  const ci=p.lastIndexOf(', ');
+  if(ci>0){ const r=p.slice(ci+2), t=p.slice(0,ci); if(REGION[r]) return {main:REGION[r]+' · '+(TOWN[t]||t), sub:p, region:REGION[r], town:TOWN[t]||t}; }
+  if(REGION[p]) return {main:REGION[p], sub:p, region:REGION[p]};
+  return {main:p, sub:''};
+}
+function josa(w, pair){ // pair = [받침 있을 때, 없을 때]
+  const c=w.charCodeAt(w.length-1);
+  if(c<0xAC00||c>0xD7A3) return w+pair[1];
+  return w+(((c-0xAC00)%28)? pair[0]:pair[1]);
+}
+const fmtParts = new Intl.DateTimeFormat('en-US',{timeZone:'Asia/Seoul',year:'numeric',month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false,weekday:'short'});
+const WD={Sun:'일',Mon:'월',Tue:'화',Wed:'수',Thu:'목',Fri:'금',Sat:'토'};
+function kst(ms){ const o={}; for(const p of fmtParts.formatToParts(new Date(ms))) o[p.type]=p.value; if(o.hour==='24') o.hour='00'; return o; }
+const fDate = ms => { const k=kst(ms); return `${k.year}년 ${+k.month}월 ${+k.day}일 (${WD[k.weekday]||''})`; };
+const fTime = ms => { const k=kst(ms); return `${k.hour}:${k.minute}:${k.second}`; };
+const fHM = ms => { const k=kst(ms); return `${k.hour}:${k.minute}`; };
+const fShort = ms => { const k=kst(ms); return `${+k.month}월 ${+k.day}일 ${k.hour}:${k.minute}`; };
+const fYMD = ms => { const k=kst(ms); return `${k.year}. ${+k.month}. ${+k.day}.`; };
+const fDepth = d => d<1 ? '1 km 미만' : (d<10? d.toFixed(1) : Math.round(d))+' km';
+function fDur(ms){ const m=Math.round(ms/60000); if(m<60) return m+'분'; const h=Math.floor(m/60), r=m%60; return r? `${h}시간 ${r}분` : `${h}시간`; }
+
+/* ================= Mapping: depth → color/voice, magnitude → pitch ================= */
+const DSTOPS=[[0,[1.0,0.86,0.52]],[15,[1.0,0.60,0.24]],[40,[1.0,0.31,0.37]],[100,[0.88,0.29,0.82]],[250,[0.56,0.42,1.0]],[450,[0.31,0.55,1.0]],[700,[0.28,0.90,1.0]]];
+function depthRGB(d){
+  d=clamp(d,0,700);
+  for(let i=1;i<DSTOPS.length;i++){ if(d<=DSTOPS[i][0]){ const a=DSTOPS[i-1], b=DSTOPS[i], t=(d-a[0])/(b[0]-a[0]); return [lerp(a[1][0],b[1][0],t),lerp(a[1][1],b[1][1],t),lerp(a[1][2],b[1][2],t)]; } }
+  return DSTOPS[DSTOPS.length-1][1];
+}
+const css = (c,a=1) => `rgba(${Math.round(c[0]*255)},${Math.round(c[1]*255)},${Math.round(c[2]*255)},${a})`;
+const VOICES=[
+  {name:'지각의 현', range:'0–20 km', desc:'얕은 지진은 줄을 튕기듯 짧고 밝게 울려요.', depth:8},
+  {name:'맨틀의 종', range:'20–100 km', desc:'중간 깊이는 금속 종처럼 맑게 퍼져요.', depth:45},
+  {name:'깊은 합창', range:'100–300 km', desc:'더 깊어지면 여러 목소리가 겹친 듯 부드러워져요.', depth:170},
+  {name:'심연의 고래', range:'300–700 km', desc:'가장 깊은 지진은 고래 울음처럼 낮고 길게 남아요.', depth:560}
+];
+const voiceOf = d => d<20?0:d<100?1:d<300?2:3;
+const PENTA=[0,3,5,7,10];
+const magStep = m => Math.round(clamp((9.5-m)/10,0,1)*22);
+const stepMidi = k => 33 + 12*Math.floor(k/5) + PENTA[((k%5)+5)%5];
+const magMidi = m => stepMidi(magStep(m));
+const NOTE=['C','C♯','D','D♯','E','F','F♯','G','G♯','A','A♯','B'], SOL={C:'도',D:'레',E:'미',F:'파',G:'솔',A:'라',B:'시'};
+const noteName = n => NOTE[n%12]+(Math.floor(n/12)-1);
+const noteSol = n => SOL[NOTE[n%12][0]];
+const mtof = n => 440*Math.pow(2,(n-69)/12);
+const DEPTH_EXAG=4;
+
+function latLonToVec(lat,lon,r){
+  const phi=(90-lat)*DEG, th=(lon+180)*DEG;
+  return HAS3 ? new THREE.Vector3(-r*Math.sin(phi)*Math.cos(th), r*Math.cos(phi), r*Math.sin(phi)*Math.sin(th))
+              : {x:-r*Math.sin(phi)*Math.cos(th), y:r*Math.cos(phi), z:r*Math.sin(phi)*Math.sin(th)};
+}
+// Subsolar point at a given moment (low-precision solar ephemeris, good to ~0.1°)
+function sunDir(ms){
+  const d=ms/86400000-10957.5, g=(357.528+0.9856003*d)*DEG, L=280.460+0.9856474*d;
+  const lam=(L+1.915*Math.sin(g)+0.020*Math.sin(2*g))*DEG, eps=(23.439-0.0000004*d)*DEG;
+  const dec=Math.asin(Math.sin(eps)*Math.sin(lam)), ra=Math.atan2(Math.cos(eps)*Math.sin(lam),Math.cos(lam));
+  let lon=(ra/DEG-(280.46061837+360.98564736629*d))%360; if(lon<-180) lon+=360; if(lon>180) lon-=360;
+  return latLonToVec(dec/DEG,lon,1);
+}
+function haversine(a,b,c,d){ const R=6371, x=(c-a)*DEG, y=(d-b)*DEG; const h=Math.sin(x/2)**2+Math.cos(a*DEG)*Math.cos(c*DEG)*Math.sin(y/2)**2; return 2*R*Math.asin(Math.min(1,Math.sqrt(h))); }
+
+/* ================= Scenes ================= */
+const LEAD=1.4, TAIL=4;
+const warp = g => clamp(0.55*Math.log1p(g/45000), 0.06, 3.2);
+const SCENES = DATA.scenes;
+function prepare(s){
+  if(s.prepared) return s;
+  const t0=s.t0*1000;
+  s.events = s.ev.map((a,i)=>{
+    const d=Math.max(0,a[3]);
+    const e={i, t:t0+a[0]*1000, lat:a[1], lon:a[2], depth:d, mag:a[4], id:a[5], place:a[6]};
+    e.ko=koPlace(e.place); e.vec=latLonToVec(e.lat,e.lon,1); e.rgb=depthRGB(d); e.midi=magMidi(e.mag); e.voice=voiceOf(d);
+    e.dr=1-(Math.min(d,700)/6371)*DEPTH_EXAG;
+    return e;
+  });
+  const ev=s.events, n=ev.length;
+  s.r=new Float64Array(n); let acc=LEAD;
+  for(let i=0;i<n;i++){ if(i) acc+=warp(ev[i].t-ev[i-1].t); s.r[i]=acc; }
+  s.total=acc+TAIL; s.tStart=ev[0].t; s.tEnd=ev[n-1].t;
+  s.magMin=Math.min(...ev.map(e=>e.mag)); s.magMax=Math.max(...ev.map(e=>e.mag));
+  s.maxEv=ev.reduce((a,b)=>b.mag>a.mag?b:a);
+  if(s.kind==='now') s.highlights={[s.maxEv.id]:`오늘 가장 큰 박동 · ${s.maxEv.ko.region||s.maxEv.ko.main} M${s.maxEv.mag.toFixed(1)}`};
+  for(const e of ev) e.hl = (s.highlights && s.highlights[e.id]) || null;
+  s.ringThr=Math.min(4.5, s.magMax-1.6);
+  // focus direction: magnitude-weighted centroid
+  let fx=0,fy=0,fz=0; for(const e of ev){ const w=Math.pow(3,e.mag); fx+=e.vec.x*w; fy+=e.vec.y*w; fz+=e.vec.z*w; }
+  const fl=Math.hypot(fx,fy,fz)||1; s.focus={x:fx/fl,y:fy/fl,z:fz/fl};
+  s.prepared=true;
+  s.diary=buildDiary(s);
+  return s;
+}
+function idxAtOrBefore(s,t){ let lo=0,hi=s.events.length-1,ans=-1; while(lo<=hi){ const m=(lo+hi)>>1; if(s.events[m].t<=t){ans=m;lo=m+1;} else hi=m-1; } return ans; }
+function realAt(s,p){
+  const r=s.r, ev=s.events, n=ev.length;
+  if(p<=r[0]) return ev[0].t-(r[0]-p)*90000;
+  if(p>=r[n-1]) return ev[n-1].t+(p-r[n-1])*90000;
+  let lo=0,hi=n-2; while(lo<hi){ const m=(lo+hi+1)>>1; if(r[m]<=p) lo=m; else hi=m-1; }
+  const f=(p-r[lo])/(r[lo+1]-r[lo]); return ev[lo].t+f*(ev[lo+1].t-ev[lo].t);
+}
+function pAtReal(s,t){
+  const ev=s.events, r=s.r, n=ev.length;
+  if(t<=ev[0].t) return Math.max(0,r[0]-(ev[0].t-t)/90000);
+  if(t>=ev[n-1].t) return r[n-1];
+  const i=idxAtOrBefore(s,t); const f=(t-ev[i].t)/Math.max(1,ev[i+1].t-ev[i].t); return r[i]+f*(r[i+1]-r[i]);
+}
+function activityAt(s,t){
+  let a=0; for(let i=idxAtOrBefore(s,t); i>=0 && s.events[i].t>t-3600e3; i--){ a+=0.6+0.35*Math.max(0,s.events[i].mag-2); }
+  return a;
+}
+const bpmFor = a => clamp(56+9*Math.sqrt(a), 54, 150);
+const adrFor = m => m>4.5 ? 6*Math.pow(m-4.5,1.2) : 0;
+const moodOf = b => b<68?'평온해요':b<90?'두근거려요':b<120?'빨라졌어요':'요동쳐요';
+
+function buildDiary(s){
+  const ev=s.events, n=ev.length, out=[];
+  const max=s.maxEv, deep=ev.reduce((a,b)=>b.depth>a.depth?b:a);
+  let best=0,bi=0,j=0; for(let i=0;i<n;i++){ while(ev[i].t-ev[j].t>3600e3) j++; if(i-j+1>best){best=i-j+1;bi=i;} }
+  const busyStart=ev[bi].t-3600e3;
+  const groups=new Map();
+  for(const e of ev){ const k = s.kind==='now' ? (e.ko.town? (e.ko.region? e.ko.region+' '+e.ko.town : e.ko.town) : e.ko.main) : (e.ko.region || e.ko.main); groups.set(k,(groups.get(k)||0)+1); }
+  let topK='',topN=0; for(const [k,v] of groups) if(v>topN){topN=v;topK=k;}
+  let peak=0, peakEv=ev[0];
+  for(const e of ev){ const b=Math.min(178,bpmFor(activityAt(s,e.t))+adrFor(e.mag)); if(b>peak){peak=b;peakEv=e;} }
+  const mags=ev.map(e=>e.mag).sort((a,b)=>a-b);
+  if(s.kind==='now') out.push({head:`지난 24시간 동안 지구는 <b>${n}</b>번 떨렸어요.`});
+  else if(s.kind==='week') out.push({head:`최근 7일, 규모 4.5 이상만 <b>${n}</b>번 있었어요.`});
+  else out.push({head:`${s.date} 전후, 규모 ${mags[0].toFixed(1)} 이상만 <b>${n}</b>번 기록됐어요.`});
+  out.push({k:'가장 크게 뛴 순간', v:`<b>M${max.mag.toFixed(1)}</b> · ${max.ko.main}<br><span style="color:var(--ink-3)">${fShort(max.t)}</span>`, e:max});
+  out.push({k:'가장 깊은 울림', v:`<b>${fDepth(deep.depth)}</b> 아래 · ${deep.ko.main}`, e:deep});
+  out.push({k:'가장 바빴던 한 시간', v:`${fShort(busyStart)}부터 한 시간 동안 <b>${best}</b>번`, e:ev[bi-best+1]||ev[bi]});
+  out.push({k:'가장 수다스러운 곳', v:`${topK} · <b>${topN}</b>번`});
+  out.push({k:'최고 심박', v:`<b>${Math.round(peak)}</b> BPM · ${fShort(peakEv.t)}`, e:peakEv});
+  if(s.kind!=='now'){
+    const after=ev.filter(e=>e!==max && e.t>max.t && e.t<=max.t+3600e3 && haversine(e.lat,e.lon,max.lat,max.lon)<700).length;
+    out.push({k:'가장 큰 지진 뒤 한 시간', v:`근처에서 여진 <b>${after}</b>번`});
+  }
+  return out;
+}
+
+/* ================= Audio ================= */
+const Sound = {
+  ctx:null, ready:false, muted:false, vol:0.9, voices:0,
+  init(){
+    if(this.ctx) return this.ready;
+    const AC=window.AudioContext||window.webkitAudioContext; if(!AC) return false;
+    let ctx; try{ ctx=new AC({latencyHint:'interactive'}); }catch(e){ try{ ctx=new AC(); }catch(e2){ return false; } }
+    this.ctx=ctx; const sr=ctx.sampleRate;
+    const master=this.master=ctx.createGain(); master.gain.value=0;
+    const comp=ctx.createDynamicsCompressor(); comp.threshold.value=-18; comp.knee.value=12; comp.ratio.value=4; comp.attack.value=0.005; comp.release.value=0.3;
+    const lim=ctx.createDynamicsCompressor(); lim.threshold.value=-2.5; lim.knee.value=0; lim.ratio.value=20; lim.attack.value=0.001; lim.release.value=0.12;
+    const an=this.analyser=ctx.createAnalyser(); an.fftSize=1024; an.smoothingTimeConstant=0.3; this.buf=new Float32Array(an.fftSize);
+    master.connect(comp); comp.connect(lim); lim.connect(an); an.connect(ctx.destination);
+    this.dry=ctx.createGain(); this.dry.connect(master);
+    this.revIn=ctx.createGain(); const rev=ctx.createConvolver(); rev.buffer=this.makeIR(4.8); const revOut=ctx.createGain(); revOut.gain.value=0.9;
+    this.revIn.connect(rev); rev.connect(revOut); revOut.connect(master);
+    this.dlyIn=ctx.createGain(); const dL=ctx.createDelay(2), dR=ctx.createDelay(2); dL.delayTime.value=0.27; dR.delayTime.value=0.41;
+    const fb=ctx.createGain(); fb.gain.value=0.38; const tone=ctx.createBiquadFilter(); tone.type='lowpass'; tone.frequency.value=3200;
+    const mg=ctx.createChannelMerger(2), dOut=ctx.createGain(); dOut.gain.value=0.32;
+    this.dlyIn.connect(dL); dL.connect(dR); dR.connect(tone); tone.connect(fb); fb.connect(dL);
+    dL.connect(mg,0,0); dR.connect(mg,0,1); mg.connect(dOut); dOut.connect(master); dOut.connect(this.revIn);
+    const nb=ctx.createBuffer(1,sr*2,sr), nd=nb.getChannelData(0); for(let i=0;i<nd.length;i++) nd[i]=Math.random()*2-1; this.noise=nb;
+    this.hb=ctx.createGain(); this.hb.gain.value=0.95; const hbLp=ctx.createBiquadFilter(); hbLp.type='lowpass'; hbLp.frequency.value=170; hbLp.Q.value=0.9;
+    const sat=ctx.createWaveShaper(); sat.curve=this.satCurve(2.4); sat.oversample='2x';
+    this.hb.connect(hbLp); hbLp.connect(sat); sat.connect(master); const hbRev=ctx.createGain(); hbRev.gain.value=0.14; sat.connect(hbRev); hbRev.connect(this.revIn);
+    this.makeDrone();
+    this.ready=true; return true;
+  },
+  makeIR(sec){
+    const ctx=this.ctx, sr=ctx.sampleRate, len=Math.floor(sr*sec), b=ctx.createBuffer(2,len,sr);
+    for(let ch=0;ch<2;ch++){
+      const d=b.getChannelData(ch); let lp=0;
+      for(let i=0;i<len;i++){ const t=i/len, a=0.62-0.55*t; lp+=a*((Math.random()*2-1)-lp); d[i]=lp*Math.pow(1-t,2.4)*(i<sr*0.006? i/(sr*0.006):1); }
+      for(let k=0;k<10;k++){ const at=Math.floor(sr*(0.009+Math.random()*0.08)); if(at<len) d[at]+=(Math.random()*2-1)*0.45*(1-k/10); }
+    }
+    return b;
+  },
+  satCurve(k){ const n=1024,c=new Float32Array(n); for(let i=0;i<n;i++){ const x=i/(n-1)*2-1; c[i]=Math.tanh(k*x)/Math.tanh(k); } return c; },
+  makeDrone(){
+    const ctx=this.ctx; const g=this.droneGain=ctx.createGain(); g.gain.value=0;
+    const lp=this.droneLp=ctx.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=200; lp.Q.value=5;
+    const lfo=ctx.createOscillator(); lfo.frequency.value=0.045; const lg=ctx.createGain(); lg.gain.value=80; lfo.connect(lg); lg.connect(lp.frequency); lfo.start();
+    for(const [f,type,amp] of [[55,'sawtooth',0.45],[82.41,'sawtooth',0.3],[110.2,'triangle',0.22],[27.5,'sine',0.9]]){
+      const o=ctx.createOscillator(); o.type=type; o.frequency.value=f; o.detune.value=(Math.random()*2-1)*7; const og=ctx.createGain(); og.gain.value=amp; o.connect(og); og.connect(lp); o.start();
+    }
+    lp.connect(g); g.connect(this.dry); const gs=ctx.createGain(); gs.gain.value=0.7; g.connect(gs); gs.connect(this.revIn);
+  },
+  start(){
+    if(!this.ready) return; const t=this.ctx.currentTime;
+    if(this.ctx.state!=='running') this.ctx.resume();
+    this.master.gain.cancelScheduledValues(t); this.master.gain.setValueAtTime(this.master.gain.value,t); this.master.gain.linearRampToValueAtTime(this.muted?0:this.vol,t+1.4);
+    this.droneGain.gain.setTargetAtTime(0.05,t,1.6);
+    // iOS unlock: a silent buffer
+    const s=this.ctx.createBufferSource(); s.buffer=this.ctx.createBuffer(1,1,22050); s.connect(this.ctx.destination); s.start();
+  },
+  setMuted(m){ this.muted=m; if(!this.ready) return; const t=this.ctx.currentTime; this.master.gain.cancelScheduledValues(t); this.master.gain.setTargetAtTime(m?0:this.vol,t,0.08); },
+  setActivity(a){ if(!this.ready) return; const t=this.ctx.currentTime; this.droneLp.frequency.setTargetAtTime(150+a*560,t,0.9); this.droneGain.gain.setTargetAtTime(0.04+a*0.05,t,0.9); },
+  duck(t,dur){ if(!this.ready) return; const g=this.droneGain.gain; g.setTargetAtTime(0.008,t,0.04); g.setTargetAtTime(0.055,t+dur,1.4); },
+  live(){ return this.ready && !this.muted && this.ctx.state==='running'; },
+  at(v){ return this.ctx.currentTime + Math.max(0, v - vtime) + 0.004; },
+  lat(){ return this.live() ? Math.min(0.2, this.ctx.outputLatency || this.ctx.baseLatency || 0) : 0; },
+  env(p,t,a,peak,end){ p.setValueAtTime(0.0001,t); p.exponentialRampToValueAtTime(Math.max(0.0002,peak),t+a); p.exponentialRampToValueAtTime(0.0001,end); },
+  beat(t,strength){ this.thump(t,62,0.85*strength,0.3); this.thump(t+0.17,71,0.55*strength,0.26); },
+  thump(t,f,amp,dur){
+    const ctx=this.ctx, o=ctx.createOscillator(), g=ctx.createGain();
+    o.frequency.setValueAtTime(f*2.2,t); o.frequency.exponentialRampToValueAtTime(f,t+0.035); o.frequency.exponentialRampToValueAtTime(f*0.6,t+dur);
+    this.env(g.gain,t,0.008,amp,t+dur); o.connect(g); g.connect(this.hb); o.start(t); o.stop(t+dur+0.05);
+    const n=ctx.createBufferSource(); n.buffer=this.noise; const bp=ctx.createBiquadFilter(); bp.type='bandpass'; bp.frequency.value=900; bp.Q.value=1.2; const ng=ctx.createGain();
+    this.env(ng.gain,t,0.004,amp*0.07,t+0.05); n.connect(bp); bp.connect(ng); ng.connect(this.dry); n.start(t,Math.random()); n.stop(t+0.07);
+  },
+  quake(e,t,opt){
+    if(!this.ready || this.voices>44) return;
+    const ctx=this.ctx, m=e.mag, f=mtof(e.midi), v=e.voice, far=opt.far||0;
+    const amp=clamp(0.05+0.5*Math.pow(clamp((m+1)/10.5,0,1),1.6),0.035,0.62)*(opt.gain||1);
+    const nodes=[];
+    const out=ctx.createGain(); const muff=ctx.createBiquadFilter(); muff.type='lowpass'; muff.frequency.value=lerp(16000,650,far); muff.Q.value=0.5;
+    out.connect(muff); let tail=muff;
+    if(ctx.createStereoPanner){ const pn=ctx.createStereoPanner(); pn.pan.value=clamp(opt.pan||0,-0.95,0.95); muff.connect(pn); tail=pn; nodes.push(pn); }
+    tail.connect(this.dry);
+    const rs=ctx.createGain(); rs.gain.value=[0.28,0.5,0.72,0.95][v]+far*0.3; tail.connect(rs); rs.connect(this.revIn);
+    const ds=ctx.createGain(); ds.gain.value=[0.22,0.14,0.06,0.04][v]; tail.connect(ds); ds.connect(this.dlyIn);
+    nodes.push(out,muff,rs,ds);
+    let end=[this.pluck,this.bell,this.choir,this.abyss][v].call(this,out,f,amp,t,m);
+    if(m>=5.2) end=Math.max(end,this.boom(amp,t,m,e));
+    if(m>=7) end=Math.max(end,this.aura(t,m));
+    this.voices++;
+    setTimeout(()=>{ this.voices--; for(const n of nodes){ try{ n.disconnect(); }catch(_){ } } }, Math.max(0,(end-ctx.currentTime)*1000)+600);
+    return end;
+  },
+  osc(type,f,t,stop){ const o=this.ctx.createOscillator(); o.type=type; o.frequency.value=f; o.start(t); o.stop(stop); return o; },
+  pluck(out,f,amp,t,m){
+    const ctx=this.ctx, dur=0.55+0.16*Math.max(0,m);
+    const o1=this.osc('sawtooth',f,t,t+dur+0.05), o2=this.osc('square',f*1.0035,t,t+dur+0.05), g2=ctx.createGain(); g2.gain.value=0.35;
+    const lp=ctx.createBiquadFilter(); lp.type='lowpass'; lp.Q.value=6; lp.frequency.setValueAtTime(Math.min(14000,f*16),t); lp.frequency.exponentialRampToValueAtTime(Math.max(120,f*1.2),t+dur*0.7);
+    const g=ctx.createGain(); this.env(g.gain,t,0.004,amp,t+dur);
+    o1.connect(lp); o2.connect(g2); g2.connect(lp); lp.connect(g); g.connect(out);
+    const n=ctx.createBufferSource(); n.buffer=this.noise; const bp=ctx.createBiquadFilter(); bp.type='bandpass'; bp.frequency.value=Math.min(9000,f*5); bp.Q.value=2;
+    const ng=ctx.createGain(); this.env(ng.gain,t,0.002,amp*0.5,t+0.05); n.connect(bp); bp.connect(ng); ng.connect(out); n.start(t,Math.random()*1.5); n.stop(t+0.06);
+    return t+dur;
+  },
+  bell(out,f,amp,t,m){
+    const ctx=this.ctx, dur=1.8+0.32*Math.max(0,m), stop=t+dur+0.05;
+    const car=this.osc('sine',f,t,stop), mod=this.osc('sine',f*2.76,t,stop), mg=ctx.createGain();
+    mg.gain.setValueAtTime(f*2.76*3.2,t); mg.gain.exponentialRampToValueAtTime(f*0.05+1,t+dur*0.8); mod.connect(mg); mg.connect(car.frequency);
+    const g=ctx.createGain(); this.env(g.gain,t,0.003,amp*0.9,t+dur); car.connect(g); g.connect(out);
+    const p2=this.osc('sine',f*2,t,stop), g2=ctx.createGain(); this.env(g2.gain,t,0.003,amp*0.25,t+dur*0.45); p2.connect(g2); g2.connect(out);
+    return t+dur;
+  },
+  choir(out,f,amp,t,m){
+    const ctx=this.ctx, att=0.09, dur=2.6+0.3*Math.max(0,m), stop=t+dur+0.05;
+    const lp=ctx.createBiquadFilter(); lp.type='lowpass'; lp.Q.value=1.4; lp.frequency.setValueAtTime(f*2,t); lp.frequency.linearRampToValueAtTime(Math.min(5000,f*6),t+att*3); lp.frequency.exponentialRampToValueAtTime(Math.max(150,f*1.2),t+dur);
+    const pk=ctx.createBiquadFilter(); pk.type='peaking'; pk.frequency.value=820; pk.Q.value=2; pk.gain.value=6;
+    const g=ctx.createGain(); this.env(g.gain,t,att,amp*0.55,t+dur);
+    const vib=this.osc('sine',4.6,t,stop), vg=ctx.createGain(); vg.gain.setValueAtTime(0,t); vg.gain.linearRampToValueAtTime(f*0.006,t+0.5); vib.connect(vg);
+    for(const c of [-8,0,8]){ const o=this.osc('sawtooth',f,t,stop); o.detune.value=c; vg.connect(o.frequency); o.connect(lp); }
+    lp.connect(pk); pk.connect(g); g.connect(out);
+    return t+dur;
+  },
+  abyss(out,f,amp,t,m){
+    const ctx=this.ctx, att=0.35, dur=4.5+0.4*Math.max(0,m), stop=t+dur+0.05;
+    const lp=ctx.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=Math.min(900,f*3); lp.Q.value=2;
+    const g=ctx.createGain(); this.env(g.gain,t,att,amp*0.85,t+dur);
+    const o1=this.osc('sine',f,t,stop); o1.frequency.setValueAtTime(f*1.03,t); o1.frequency.exponentialRampToValueAtTime(f*0.94,t+dur);
+    const o2=this.osc('sine',f/2,t,stop); o2.frequency.setValueAtTime(f/2,t); o2.frequency.exponentialRampToValueAtTime(f/2*0.94,t+dur); const g2=ctx.createGain(); g2.gain.value=0.7;
+    const o3=this.osc('triangle',f*1.5,t,stop), g3=ctx.createGain(); g3.gain.value=0.12;
+    o1.connect(lp); o2.connect(g2); g2.connect(lp); o3.connect(g3); g3.connect(lp); lp.connect(g); g.connect(out);
+    return t+dur;
+  },
+  boom(amp,t,m,e){
+    const ctx=this.ctx, dur=2.2+0.55*(m-5), stop=t+dur+0.1, a=Math.min(0.85,amp*1.35);
+    const n=ctx.createBufferSource(); n.buffer=this.noise; n.loop=true; const lp=ctx.createBiquadFilter(); lp.type='lowpass'; lp.frequency.setValueAtTime(280,t); lp.frequency.exponentialRampToValueAtTime(55,t+dur);
+    const g=ctx.createGain(); this.env(g.gain,t,0.02,a,t+dur); n.connect(lp); lp.connect(g); g.connect(this.dry); n.start(t); n.stop(stop);
+    const o=this.osc('sine',58,t,stop); o.frequency.setValueAtTime(60,t); o.frequency.exponentialRampToValueAtTime(26,t+dur*0.8); const og=ctx.createGain(); this.env(og.gain,t,0.015,a*0.9,t+dur); o.connect(og); og.connect(this.dry);
+    if(m>=6){ // gong
+      const gf=mtof(e.midi-12), gd=dur+3, car=this.osc('sine',gf,t,t+gd), mod=this.osc('sine',gf*1.41,t,t+gd), mg=ctx.createGain();
+      mg.gain.setValueAtTime(gf*7,t); mg.gain.exponentialRampToValueAtTime(gf*0.2,t+gd); mod.connect(mg); mg.connect(car.frequency);
+      const gg=ctx.createGain(); this.env(gg.gain,t,0.01,a*0.5,t+gd); car.connect(gg); gg.connect(this.dry); const gs=ctx.createGain(); gs.gain.value=0.8; gg.connect(gs); gs.connect(this.revIn);
+      return t+gd;
+    }
+    return t+dur;
+  },
+  aura(t,m){ // the air after a great quake: noise shimmer + a high open chord
+    const ctx=this.ctx, dur=7, stop=t+dur+0.1;
+    const n=ctx.createBufferSource(); n.buffer=this.noise; n.loop=true; const hp=ctx.createBiquadFilter(); hp.type='highpass'; hp.frequency.value=4200;
+    const g=ctx.createGain(); g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(0.06,t+1.4); g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+    n.connect(hp); hp.connect(g); g.connect(this.revIn); n.start(t); n.stop(stop);
+    for(const k of [69,76,81,84]){ const o=this.osc('sine',mtof(k),t+0.6,stop), og=ctx.createGain(); og.gain.setValueAtTime(0.0001,t+0.6); og.gain.exponentialRampToValueAtTime(0.035,t+2.4); og.gain.exponentialRampToValueAtTime(0.0001,t+dur); o.connect(og); og.connect(this.revIn); og.connect(this.dry); }
+    return t+dur;
+  },
+  motif(e,t){
+    const ctx=this.ctx, k=magStep(e.mag);
+    [5,7,10].forEach((d,j)=>{
+      const f=mtof(Math.min(98,stepMidi(k+d))), tt=t+0.12*j+0.08;
+      const o=this.osc('sine',f,tt,tt+1.3), o2=this.osc('sine',f*4,tt,tt+1.3), g=ctx.createGain(), g2=ctx.createGain(); g2.gain.value=0.16;
+      this.env(g.gain,tt,0.005,0.14,tt+1.2); o.connect(g); o2.connect(g2); g2.connect(g); g.connect(this.dry);
+      const s=ctx.createGain(); s.gain.value=0.5; g.connect(s); s.connect(this.revIn); s.connect(this.dlyIn);
+    });
+  }
+};
+
+/* ================= 3D ================= */
+const RIP_N=16;
+let renderer,scene,camera,controls,composer,bloom,finalPass,ocean,dots,quakePts,atmo,core,coreGlow,shell,stars,heartTex,adoptGroup,raycaster;
+const U={};
+let baseDist=4.2;
+const pools={beams:[],rings:[],hearts:[]};
+
+const FinalShader={
+  uniforms:{tDiffuse:{value:null},uTime:{value:0},uAberr:{value:0.0015},uVig:{value:0.55}},
+  vertexShader:'varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}',
+  fragmentShader:`uniform sampler2D tDiffuse;uniform float uTime,uAberr,uVig;varying vec2 vUv;
+  void main(){vec2 c=vUv-0.5;float r2=dot(c,c);vec2 o=c*uAberr*(0.6+r2*3.0);
+  vec3 col=vec3(texture2D(tDiffuse,vUv+o).r,texture2D(tDiffuse,vUv).g,texture2D(tDiffuse,vUv-o).b);
+  col*=1.0-uVig*smoothstep(0.08,0.62,r2);
+  float n=fract(sin(dot(vUv*vec2(12.9898,78.233)+fract(uTime*0.37),vec2(1.0,1.0)))*43758.5453);
+  col+=(n-0.5)*0.022;gl_FragColor=vec4(col,1.0);}`
+};
+const RIPPLE_GLSL=`
+uniform vec4 uRip[${RIP_N}];uniform vec4 uRipP[${RIP_N}];uniform vec3 uRipC[${RIP_N}];uniform float uTime;
+void ripple(vec3 n,float thin,out float glow,out vec3 col){
+  glow=0.0;col=vec3(0.0);
+  for(int i=0;i<${RIP_N};i++){
+    vec4 R=uRip[i];vec4 P=uRipP[i];float age=uTime-R.w;
+    if(age<0.0||age>P.z) continue;
+    float ang=acos(clamp(dot(n,R.xyz),-1.0,1.0));
+    float k=(ang-age*P.x)/(P.y*thin);
+    float fade=1.0-age/P.z;
+    float g=(exp(-k*k)*fade*fade+exp(-ang/min(P.y*0.9,0.07))*exp(-age*1.6)*0.9)*P.w;
+    glow+=g;col+=uRipC[i]*g;
+  }
+  if(glow>0.0001) col/=glow;
+}`;
+
+function initGL(){
+  if(!HAS3) return false;
+  const canvas=$('#gl');
+  try{ renderer=new THREE.WebGLRenderer({canvas,antialias:true,powerPreference:'high-performance'}); }catch(e){ return false; }
+  if(!renderer.getContext()) return false;
+  const pr=Math.min(window.devicePixelRatio||1, (mqMobile.matches||COARSE)?1.6:2);
+  renderer.setPixelRatio(pr); renderer.setClearColor(0x03040a,1);
+  scene=new THREE.Scene();
+  camera=new THREE.PerspectiveCamera(36,1,0.05,300); camera.position.set(0,1.2,4.4);
+  controls=new THREE.OrbitControls(camera,canvas);
+  Object.assign(controls,{enableDamping:true,dampingFactor:0.07,enablePan:false,rotateSpeed:0.5,zoomSpeed:0.7,minDistance:1.5,maxDistance:10});
+  raycaster=new THREE.Raycaster();
+  const rip=[],ripP=[],ripC=[];
+  for(let i=0;i<RIP_N;i++){ rip.push(new THREE.Vector4(0,1,0,-1e4)); ripP.push(new THREE.Vector4(0.1,0.05,1,0)); ripC.push(new THREE.Vector3(1,1,1)); }
+  Object.assign(U,{uTime:{value:100},uRip:{value:rip},uRipP:{value:ripP},uRipC:{value:ripC},uXray:{value:0},uBeat:{value:0},uAudio:{value:0},uFlash:{value:0},uPix:{value:pr},uShowAll:{value:0.32},uSun:{value:new THREE.Vector3(1,0,0)}});
+  buildBackground(); buildStars(); const mask=buildLandMask(); buildOcean(mask); buildDots(mask); buildAtmo(); buildCore(); buildPools(); buildAdoptMarker();
+  composer=new THREE.EffectComposer(renderer);
+  composer.addPass(new THREE.RenderPass(scene,camera));
+  bloom=new THREE.UnrealBloomPass(new THREE.Vector2(512,512),0.95,0.62,0.14); composer.addPass(bloom);
+  finalPass=new THREE.ShaderPass(FinalShader); composer.addPass(finalPass);
+  controls.addEventListener('start',()=>{ Cam.hold=1e9; });
+  controls.addEventListener('end',()=>{ Cam.hold=5; });
+  return true;
+}
+function buildBackground(){
+  const m=new THREE.ShaderMaterial({side:THREE.BackSide,depthWrite:false,
+    vertexShader:'varying vec3 vD;void main(){vD=position;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}',
+    fragmentShader:`varying vec3 vD;
+    float h(vec3 p){p=fract(p*0.3183099+0.1);p*=17.0;return fract(p.x*p.y*p.z*(p.x+p.y+p.z));}
+    float nz(vec3 x){vec3 i=floor(x),f=fract(x);f=f*f*(3.0-2.0*f);
+      return mix(mix(mix(h(i),h(i+vec3(1,0,0)),f.x),mix(h(i+vec3(0,1,0)),h(i+vec3(1,1,0)),f.x),f.y),mix(mix(h(i+vec3(0,0,1)),h(i+vec3(1,0,1)),f.x),mix(h(i+vec3(0,1,1)),h(i+vec3(1,1,1)),f.x),f.y),f.z);}
+    float fbm(vec3 p){float a=0.5,s=0.0;for(int i=0;i<5;i++){s+=a*nz(p);p*=2.03;a*=0.5;}return s;}
+    void main(){vec3 d=normalize(vD);float b=exp(-pow(dot(d,normalize(vec3(0.35,0.86,0.37)))/0.32,2.0));float n=fbm(d*3.2);
+      vec3 col=vec3(0.010,0.013,0.030)+vec3(0.060,0.030,0.110)*b*n*1.5+vec3(0.0,0.045,0.065)*pow(n,3.0)*b*1.4+vec3(0.02,0.0,0.03)*pow(fbm(d*7.0+3.0),4.0);
+      gl_FragColor=vec4(col,1.0);}`});
+  scene.add(new THREE.Mesh(new THREE.SphereGeometry(150,32,24),m));
+}
+function buildStars(){
+  const N=(mqMobile.matches?1800:3200), pos=new Float32Array(N*3), size=new Float32Array(N), ph=new Float32Array(N), col=new Float32Array(N*3);
+  for(let i=0;i<N;i++){
+    const u=Math.random()*2-1, th=Math.random()*Math.PI*2, r=70+Math.random()*50, s=Math.sqrt(1-u*u);
+    pos[i*3]=r*s*Math.cos(th); pos[i*3+1]=r*u; pos[i*3+2]=r*s*Math.sin(th);
+    size[i]=0.6+Math.pow(Math.random(),4)*2.6; ph[i]=Math.random();
+    const w=Math.random(); col[i*3]=0.75+w*0.25; col[i*3+1]=0.8+w*0.1; col[i*3+2]=1.0-w*0.25;
+  }
+  const g=new THREE.BufferGeometry(); g.setAttribute('position',new THREE.BufferAttribute(pos,3)); g.setAttribute('aSize',new THREE.BufferAttribute(size,1)); g.setAttribute('aPh',new THREE.BufferAttribute(ph,1)); g.setAttribute('aCol',new THREE.BufferAttribute(col,3));
+  const m=new THREE.ShaderMaterial({uniforms:{uTime:U.uTime,uPix:U.uPix},transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,
+    vertexShader:'attribute float aSize,aPh;attribute vec3 aCol;uniform float uTime,uPix;varying vec3 vC;varying float vT;void main(){vT=0.6+0.4*sin(uTime*(0.5+aPh*1.8)+aPh*40.0);vC=aCol;gl_PointSize=aSize*uPix*1.5;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}',
+    fragmentShader:'varying vec3 vC;varying float vT;void main(){float d=length(gl_PointCoord-0.5);float a=smoothstep(0.5,0.0,d);gl_FragColor=vec4(vC*vT*a*0.9,1.0);}'});
+  stars=new THREE.Points(g,m); scene.add(stars);
+}
+function buildLandMask(){
+  const W=2048,H=1024, c=document.createElement('canvas'); c.width=W; c.height=H; const x=c.getContext('2d');
+  x.fillStyle='#000'; x.fillRect(0,0,W,H); x.fillStyle='#fff'; x.beginPath();
+  for(const ring of DATA.land){ for(let i=0;i<ring.length;i+=2){ const px=(ring[i]+180)/360*W, py=(90-ring[i+1])/180*H; if(i===0) x.moveTo(px,py); else x.lineTo(px,py); } x.closePath(); }
+  x.fill('nonzero');
+  return {canvas:c, data:x.getImageData(0,0,W,H).data, W, H};
+}
+function buildOcean(mask){
+  const tc=document.createElement('canvas'); tc.width=1024; tc.height=512; tc.getContext('2d').drawImage(mask.canvas,0,0,1024,512);
+  const tex=new THREE.CanvasTexture(tc); tex.generateMipmaps=false; tex.minFilter=THREE.LinearFilter; tex.magFilter=THREE.LinearFilter; tex.wrapS=THREE.RepeatWrapping;
+  const m=new THREE.ShaderMaterial({transparent:true,
+    uniforms:{uLand:{value:tex},uTime:U.uTime,uRip:U.uRip,uRipP:U.uRipP,uRipC:U.uRipC,uXray:U.uXray,uBeat:U.uBeat,uFlash:U.uFlash,uSun:U.uSun},
+    vertexShader:'uniform vec3 uSun;varying vec3 vN;varying vec3 vVN;varying vec3 vVD;varying vec3 vSV;void main(){vN=normalize(position);vec4 mv=modelViewMatrix*vec4(position,1.0);vVN=normalize(normalMatrix*normal);vVD=normalize(-mv.xyz);vSV=normalize((viewMatrix*vec4(uSun,0.0)).xyz);gl_Position=projectionMatrix*mv;}',
+    fragmentShader:`uniform sampler2D uLand;uniform float uXray,uBeat,uFlash;uniform vec3 uSun;varying vec3 vN;varying vec3 vVN;varying vec3 vVD;varying vec3 vSV;${RIPPLE_GLSL}
+    void main(){vec3 n=normalize(vN);float lat=asin(clamp(n.y,-1.0,1.0));float th=atan(n.z,-n.x);
+      vec2 uv=vec2(fract(th/6.2831853),lat/3.1415927+0.5);float land=texture2D(uLand,uv).r;
+      float fres=pow(1.0-max(dot(normalize(vVN),normalize(vVD)),0.0),2.4);
+      vec3 col=mix(vec3(0.010,0.022,0.055),vec3(0.028,0.065,0.135),fres);
+      col=mix(col,vec3(0.040,0.052,0.090),land*0.75);
+      float sd=dot(n,uSun);float day=smoothstep(-0.18,0.32,sd);
+      col*=mix(0.6,1.3,day);col+=vec3(0.018,0.036,0.070)*day*(1.0-land*0.4);
+      col+=vec3(1.0,0.42,0.16)*0.05*exp(-sd*sd/0.004)*(1.0-uXray);
+      vec3 nv=normalize(vVN);float sp=pow(max(dot(nv,normalize(vSV+normalize(vVD))),0.0),320.0)*(1.0-land)*day;col+=vec3(0.55,0.68,0.95)*sp*0.13;
+      float la=degrees(lat),lo=degrees(th);
+      float gl=abs(fract(la/15.0+0.5)-0.5)*15.0;float go=abs(fract(lo/15.0+0.5)-0.5)*15.0*cos(lat);
+      float grid=(1.0-smoothstep(0.0,0.16,gl))+(1.0-smoothstep(0.0,0.16,go));
+      col+=vec3(0.05,0.08,0.16)*grid*0.32*(1.0-land*0.5);
+      float g;vec3 rc;ripple(n,0.6,g,rc);col+=rc*min(g,1.6)*0.36;
+      col+=vec3(0.16,0.40,1.0)*fres*(0.38+0.25*uBeat+uFlash*0.3);
+      float a=mix(1.0,0.06+fres*0.5,uXray);gl_FragColor=vec4(col,a);}`});
+  ocean=new THREE.Mesh(new THREE.SphereGeometry(1,128,96),m); ocean.renderOrder=1; scene.add(ocean);
+}
+function buildDots(mask){
+  const N=(mqMobile.matches||COARSE)?42000:72000, pos=[], rnd=[], GA=Math.PI*(3-Math.sqrt(5));
+  for(let i=0;i<N;i++){
+    const y=1-2*(i+0.5)/N, r=Math.sqrt(1-y*y), th=i*GA, x=Math.cos(th)*r, z=Math.sin(th)*r;
+    const lat=Math.asin(y)/DEG; let lon=Math.atan2(z,-x)/DEG-180; if(lon<-180) lon+=360;
+    const px=Math.min(mask.W-1,Math.floor((lon+180)/360*mask.W)), py=Math.min(mask.H-1,Math.floor((90-lat)/180*mask.H));
+    if(mask.data[(py*mask.W+px)*4]>127){ pos.push(x,y,z); rnd.push(Math.random()); }
+  }
+  const g=new THREE.BufferGeometry(); g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3)); g.setAttribute('aR',new THREE.Float32BufferAttribute(rnd,1));
+  const m=new THREE.ShaderMaterial({transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,
+    uniforms:{uTime:U.uTime,uRip:U.uRip,uRipP:U.uRipP,uRipC:U.uRipC,uXray:U.uXray,uBeat:U.uBeat,uPix:U.uPix,uSun:U.uSun,uSize:{value:mqMobile.matches?1.9:2.1}},
+    vertexShader:`attribute float aR;uniform float uPix,uSize,uXray,uBeat;uniform vec3 uSun;varying vec3 vC;varying float vG;varying float vB;varying float vR;varying float vDay;${RIPPLE_GLSL}
+    void main(){vec3 n=normalize(position);float g;vec3 c;ripple(n,1.0,g,c);vG=g;vC=c;vR=aR;vDay=smoothstep(-0.2,0.35,dot(n,uSun));
+      vec3 p=n*(1.004+0.018*min(g,2.0));vec4 mv=modelViewMatrix*vec4(p,1.0);
+      vB=step(0.0,-dot(normalize(normalMatrix*n),normalize(-mv.xyz)));
+      gl_PointSize=uSize*uPix*(1.0+min(g,2.0)*0.7)*(3.4/-mv.z);gl_Position=projectionMatrix*mv;}`,
+    fragmentShader:`uniform float uXray,uBeat;varying vec3 vC;varying float vG;varying float vB;varying float vR;varying float vDay;
+    void main(){float d=length(gl_PointCoord-0.5);float a=smoothstep(0.5,0.05,d);
+      vec3 base=mix(vec3(0.20,0.27,0.48),vec3(0.42,0.56,0.82),vDay)*(0.42+0.16*vR+0.12*uBeat);
+      vec3 col=base+vC*min(vG,1.8)*1.1;float al=a*(0.55+min(vG,1.6)*0.5)*mix(1.0,0.16,vB*uXray);
+      gl_FragColor=vec4(col*al,1.0);}`});
+  dots=new THREE.Points(g,m); dots.renderOrder=2; scene.add(dots);
+}
+function buildAtmo(){
+  const m=new THREE.ShaderMaterial({side:THREE.BackSide,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,
+    uniforms:{uBeat:U.uBeat,uAudio:U.uAudio,uFlash:U.uFlash,uXray:U.uXray,uA:{value:new THREE.Color(0.20,0.46,1.0)},uB:{value:new THREE.Color(1.0,0.22,0.45)}},
+    vertexShader:'varying vec3 vP;varying vec3 vC;void main(){vec4 mv=modelViewMatrix*vec4(position,1.0);vP=mv.xyz;vC=(modelViewMatrix*vec4(0.0,0.0,0.0,1.0)).xyz;gl_Position=projectionMatrix*mv;}',
+    fragmentShader:`uniform vec3 uA,uB;uniform float uBeat,uAudio,uFlash,uXray;varying vec3 vP;varying vec3 vC;
+    void main(){vec3 d=normalize(vP);vec3 q=d*dot(vC,d)-vC;float h=length(q)-1.0;
+      float H=0.045*(1.0+uBeat*0.22+uFlash*0.6+uAudio*0.5);
+      float g=h>0.0? exp(-h/H)*smoothstep(0.19,0.08,h) : exp(h/0.022)*(0.3+0.7*uXray);
+      float lit=0.6+0.4*dot(normalize(q.xy+vec2(1e-5)),vec2(-0.548,0.837));
+      vec3 c=mix(uA,uB,clamp(uBeat*0.4+uFlash*0.7,0.0,1.0));
+      gl_FragColor=vec4(c*g*lit*(0.8+uBeat*0.45+uAudio*1.0+uFlash*1.1),1.0);}`});
+  atmo=new THREE.Mesh(new THREE.SphereGeometry(1,96,64),m); atmo.scale.setScalar(1.2); atmo.renderOrder=0; scene.add(atmo);
+}
+function buildCore(){
+  const m=new THREE.ShaderMaterial({transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,uniforms:{uXray:U.uXray,uBeat:U.uBeat},
+    vertexShader:'varying vec3 vN;varying vec3 vV;void main(){vN=normalize(normalMatrix*normal);vec4 mv=modelViewMatrix*vec4(position,1.0);vV=normalize(-mv.xyz);gl_Position=projectionMatrix*mv;}',
+    fragmentShader:'uniform float uXray,uBeat;varying vec3 vN;varying vec3 vV;void main(){float f=dot(vN,vV);vec3 c=mix(vec3(0.9,0.12,0.28),vec3(1.0,0.55,0.42),f*f);gl_FragColor=vec4(c*(0.22+0.5*f+uBeat*0.55)*uXray,1.0);}'});
+  core=new THREE.Mesh(new THREE.SphereGeometry(0.19,48,32),m); core.renderOrder=3; scene.add(core);
+  const cg=document.createElement('canvas'); cg.width=cg.height=128; const x=cg.getContext('2d'); const gr=x.createRadialGradient(64,64,0,64,64,64);
+  gr.addColorStop(0,'rgba(255,90,120,0.9)'); gr.addColorStop(0.35,'rgba(255,60,100,0.25)'); gr.addColorStop(1,'rgba(255,40,80,0)'); x.fillStyle=gr; x.fillRect(0,0,128,128);
+  coreGlow=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(cg),transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,opacity:0}));
+  coreGlow.scale.setScalar(0.9); coreGlow.renderOrder=3; scene.add(coreGlow);
+  const r=1-660/6371*DEPTH_EXAG, pts=[];
+  for(let la=-60;la<=60;la+=30){ for(let lo=0;lo<360;lo+=4){ const a=latLonToVec(la,lo,r), b=latLonToVec(la,lo+4,r); pts.push(a,b); } }
+  for(let lo=0;lo<180;lo+=30){ for(let la=-90;la<90;la+=4){ const a=latLonToVec(la,lo,r), b=latLonToVec(la+4,lo,r); pts.push(a,b); const c2=latLonToVec(la,lo+180,r), d2=latLonToVec(la+4,lo+180,r); pts.push(c2,d2); } }
+  shell=new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(pts),new THREE.LineBasicMaterial({color:0x8f6bff,transparent:true,opacity:0,depthWrite:false,blending:THREE.AdditiveBlending}));
+  shell.renderOrder=3; scene.add(shell);
+}
+function heartTexture(){
+  if(heartTex) return heartTex;
+  const c=document.createElement('canvas'); c.width=c.height=128; const x=c.getContext('2d');
+  const p=new Path2D('M16 28.5C6 21 0 15.5 0 8.6 0 3.6 3.9 0 8.6 0c3 0 5.8 1.6 7.4 4.2C17.6 1.6 20.4 0 23.4 0 28.1 0 32 3.6 32 8.6 32 15.5 26 21 16 28.5z');
+  x.translate(64-48,64-44); x.scale(3,3); x.shadowColor='rgba(255,61,110,1)'; x.shadowBlur=6; x.fillStyle='#ff4d7a'; x.fill(p);
+  heartTex=new THREE.CanvasTexture(c); return heartTex;
+}
+function buildPools(){
+  const bg=new THREE.CylinderGeometry(1,1,1,10,1,true); bg.translate(0,0.5,0);
+  const bv='varying float vY;void main(){vY=position.y;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}';
+  const bf='uniform vec3 uC;uniform float uO;varying float vY;void main(){float a=uO*pow(1.0-vY,1.6);gl_FragColor=vec4(uC*a*1.6,1.0);}';
+  for(let i=0;i<72;i++){
+    const m=new THREE.ShaderMaterial({uniforms:{uC:{value:new THREE.Color()},uO:{value:0}},vertexShader:bv,fragmentShader:bf,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending});
+    const mesh=new THREE.Mesh(bg,m); mesh.visible=false; mesh.renderOrder=4; scene.add(mesh); pools.beams.push({mesh,t:-1,life:1,h:0.1,w:0.003});
+  }
+  const rg=new THREE.RingGeometry(0.86,1,96);
+  const rf='uniform vec3 uC;uniform float uO;varying vec2 vU;void main(){gl_FragColor=vec4(uC*uO*1.5,1.0);}';
+  for(let i=0;i<20;i++){
+    const m=new THREE.ShaderMaterial({uniforms:{uC:{value:new THREE.Color()},uO:{value:0}},vertexShader:'varying vec2 vU;void main(){vU=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}',fragmentShader:rf,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,side:THREE.DoubleSide});
+    const mesh=new THREE.Mesh(rg,m); mesh.visible=false; mesh.renderOrder=4; scene.add(mesh); pools.rings.push({mesh,t:-1,life:1,R:0.1});
+  }
+  for(let i=0;i<28;i++){
+    const s=new THREE.Sprite(new THREE.SpriteMaterial({map:heartTexture(),transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,opacity:0}));
+    s.visible=false; s.renderOrder=5; scene.add(s); pools.hearts.push({s,t:-1,life:1.8,v:new THREE.Vector3(),p:new THREE.Vector3()});
+  }
+}
+function buildAdoptMarker(){
+  adoptGroup=new THREE.Group(); adoptGroup.visible=false; scene.add(adoptGroup);
+  const hs=new THREE.Sprite(new THREE.SpriteMaterial({map:heartTexture(),transparent:true,depthWrite:false,opacity:0.95})); hs.scale.setScalar(0.07); hs.renderOrder=6; adoptGroup.add(hs); adoptGroup.userData.heart=hs;
+  const ring=new THREE.LineLoop(new THREE.BufferGeometry(),new THREE.LineBasicMaterial({color:0xff4d7a,transparent:true,opacity:0.55,depthWrite:false,blending:THREE.AdditiveBlending}));
+  ring.renderOrder=6; adoptGroup.add(ring); adoptGroup.userData.ring=ring;
+}
+function placeAdoptMarker(a){
+  if(!adoptGroup) return;
+  if(!a){ adoptGroup.visible=false; return; }
+  adoptGroup.visible=true;
+  const c=latLonToVec(a.lat,a.lon,1); adoptGroup.userData.heart.position.copy(c).multiplyScalar(1.07); adoptGroup.userData.center=c;
+  const ang=a.rkm/6371, up=Math.abs(c.y)>0.95?new THREE.Vector3(1,0,0):new THREE.Vector3(0,1,0);
+  const t1=new THREE.Vector3().crossVectors(c,up).normalize(), t2=new THREE.Vector3().crossVectors(c,t1).normalize(), pts=[];
+  for(let i=0;i<96;i++){ const q=i/96*Math.PI*2; pts.push(c.clone().multiplyScalar(Math.cos(ang)).addScaledVector(t1,Math.sin(ang)*Math.cos(q)).addScaledVector(t2,Math.sin(ang)*Math.sin(q)).multiplyScalar(1.005)); }
+  adoptGroup.userData.ring.geometry.dispose(); adoptGroup.userData.ring.geometry=new THREE.BufferGeometry().setFromPoints(pts);
+}
+function setQuakePoints(s){
+  if(!renderer) return;
+  if(quakePts){ scene.remove(quakePts); quakePts.geometry.dispose(); }
+  const n=s.events.length, pos=new Float32Array(n*3), mag=new Float32Array(n), col=new Float32Array(n*3), play=new Float32Array(n).fill(-1), dr=new Float32Array(n);
+  s.events.forEach((e,i)=>{ pos.set([e.vec.x,e.vec.y,e.vec.z],i*3); mag[i]=Math.max(0,e.mag); col.set(e.rgb,i*3); dr[i]=e.dr; });
+  const g=new THREE.BufferGeometry(); g.setAttribute('position',new THREE.BufferAttribute(pos,3)); g.setAttribute('aMag',new THREE.BufferAttribute(mag,1)); g.setAttribute('aCol',new THREE.BufferAttribute(col,3)); g.setAttribute('aPlay',new THREE.BufferAttribute(play,1)); g.setAttribute('aDR',new THREE.BufferAttribute(dr,1));
+  if(!quakePts || !quakePts.material){
+    quakePts=new THREE.Points(g,new THREE.ShaderMaterial({transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,uniforms:{uTime:U.uTime,uPix:U.uPix,uXray:U.uXray,uShowAll:U.uShowAll},
+      vertexShader:`attribute float aMag,aPlay,aDR;attribute vec3 aCol;uniform float uTime,uPix,uXray,uShowAll;varying vec3 vC;varying float vA;varying float vF;
+      void main(){vec3 n=normalize(position);float r=mix(1.007,aDR,uXray);vec4 mv=modelViewMatrix*vec4(n*r,1.0);
+        float pl=step(0.0,aPlay);float age=max(uTime-aPlay,0.0);float fl=pl*exp(-age*1.5);
+        vA=mix(uShowAll,0.95,pl);vF=fl;vC=aCol;
+        gl_PointSize=(1.5+aMag*0.95)*(1.0+fl*2.6)*uPix*(7.0/-mv.z);gl_Position=projectionMatrix*mv;}`,
+      fragmentShader:`varying vec3 vC;varying float vA;varying float vF;void main(){float d=length(gl_PointCoord-0.5);float core=smoothstep(0.2,0.0,d);float halo=smoothstep(0.5,0.0,d);
+        vec3 c=vC*(halo*0.75+core*1.3)+vec3(1.0)*core*vF*1.3;float a=(halo*0.5+core)*(vA+vF);gl_FragColor=vec4(c*a,1.0);}`}));
+    quakePts.renderOrder=3;
+  } else quakePts.geometry=g;
+  scene.add(quakePts);
+}
+function markPlayed(i,when){ if(!quakePts) return; const a=quakePts.geometry.getAttribute('aPlay'); a.array[i]=when; a.needsUpdate=true; }
+function resetPlayed(s,uptoIdx){ if(!quakePts) return; const a=quakePts.geometry.getAttribute('aPlay'); for(let i=0;i<a.count;i++) a.array[i]= i<uptoIdx ? U.uTime.value-60 : -1; a.needsUpdate=true; }
+
+/* ---- spawners ---- */
+function spawnRipple(e,o={}){
+  const rip=U.uRip.value, rp=U.uRipP.value, rc=U.uRipC.value, now=U.uTime.value;
+  let best=0,score=1e9;
+  for(let i=0;i<RIP_N;i++){ const age=now-rip[i].w, life=rp[i].z, rem=(age<0||age>life)? -1 : rp[i].w*(1-age/life); if(rem<score){score=rem;best=i;} }
+  const m=Math.max(0,e.mag), reach=Math.min(2.2,0.05+0.035*Math.exp(0.48*m)), life=1.6+0.55*m;
+  const sp=o.speed||1, c=o.col||e.rgb;
+  rip[best].set(e.vec.x,e.vec.y,e.vec.z,now); rp[best].set(reach/life*sp,(0.02+reach*0.05)*(o.thin||1),life/(o.speed?Math.sqrt(sp):1),Math.min(1.05,0.35+0.1*m)*(o.w||1)); rc[best].set(c[0],c[1],c[2]);
+}
+const _up=HAS3? new THREE.Vector3(0,1,0) : null;
+function spawnBeam(e){
+  let b=pools.beams.find(x=>x.t<0); if(!b) b=pools.beams.reduce((a,c)=>c.t<a.t?c:a);
+  const m=Math.max(0,e.mag); b.t=U.uTime.value; b.life=1.3+0.5*m; b.h=0.05+0.055*m; b.w=0.0022+0.0006*m;
+  b.mesh.position.copy(e.vec).multiplyScalar(1.004); b.mesh.quaternion.setFromUnitVectors(_up,e.vec);
+  b.mesh.material.uniforms.uC.value.setRGB(e.rgb[0],e.rgb[1],e.rgb[2]); b.mesh.visible=true;
+}
+const _z=HAS3? new THREE.Vector3(0,0,1):null;
+function spawnRing(e){
+  let r=pools.rings.find(x=>x.t<0); if(!r) r=pools.rings.reduce((a,c)=>c.t<a.t?c:a);
+  const m=Math.max(0,e.mag); r.t=U.uTime.value; r.life=1.2+0.3*m; r.R=Math.min(0.3,0.04+0.04*m);
+  r.mesh.position.copy(e.vec).multiplyScalar(1.006); r.mesh.quaternion.setFromUnitVectors(_z,e.vec);
+  r.mesh.material.uniforms.uC.value.setRGB(e.rgb[0],e.rgb[1],e.rgb[2]); r.mesh.visible=true;
+}
+function spawnHearts(e){
+  for(let k=0;k<7;k++){
+    let h=pools.hearts.find(x=>x.t<0); if(!h) h=pools.hearts.reduce((a,c)=>c.t<a.t?c:a);
+    h.t=U.uTime.value+k*0.06; h.life=1.6+Math.random()*0.6; h.p.copy(e.vec).multiplyScalar(1.02);
+    const side=new THREE.Vector3(Math.random()-0.5,Math.random()-0.5,Math.random()-0.5).multiplyScalar(0.25);
+    h.v.copy(e.vec).multiplyScalar(0.16+Math.random()*0.1).add(side.multiplyScalar(0.5)); h.s.visible=true;
+  }
+}
+function updatePools(){
+  const now=U.uTime.value;
+  for(const b of pools.beams){ if(b.t<0) continue; const a=(now-b.t)/b.life; if(a>=1){ b.t=-1; b.mesh.visible=false; continue; }
+    const grow=Math.min(1,(now-b.t)/0.18); b.mesh.scale.set(b.w*(1+a*0.6),b.h*grow*(1-a*0.25),b.w*(1+a*0.6)); b.mesh.material.uniforms.uO.value=Math.pow(1-a,1.8); }
+  for(const r of pools.rings){ if(r.t<0) continue; const a=(now-r.t)/r.life; if(a>=1){ r.t=-1; r.mesh.visible=false; continue; }
+    const s=r.R*(0.08+Math.pow(a,0.55)); r.mesh.scale.set(s,s,s); r.mesh.material.uniforms.uO.value=Math.pow(1-a,2)*0.9; }
+  for(const h of pools.hearts){ if(h.t<0) continue; const age=now-h.t; if(age<0){ h.s.material.opacity=0; continue; } const a=age/h.life; if(a>=1){ h.t=-1; h.s.visible=false; continue; }
+    h.s.position.copy(h.p).addScaledVector(h.v,age); const sc=0.018+0.02*Math.sin(Math.min(1,a*3)*Math.PI/2); h.s.scale.setScalar(sc); h.s.material.opacity=(1-a)*0.95; }
+}
+
+/* ================= Camera ================= */
+const Cam={hold:0, follow:store.get('follow',true), target:null, shake:0, attn:[], drift:0};
+function updateCamera(dt){
+  if(!camera) return;
+  controls.update();
+  const dist=camera.position.length();
+  if(Cam.hold>0 && Cam.hold<1e8) Cam.hold-=dt;
+  if(Cam.hold<=0){
+    const now=U.uTime.value; let x=0,y=0,z=0,W=0;
+    Cam.attn=Cam.attn.filter(a=>now-a.t<14);
+    for(const a of Cam.attn){ const w=a.w*Math.exp(-(now-a.t)/5); x+=a.v.x*w; y+=a.v.y*w; z+=a.v.z*w; W+=w; }
+    if(Cam.follow && W>1e-6 && Math.hypot(x,y,z)>1e-6){ Cam.target.set(x,y,z).normalize(); }
+    const cur=camera.position.clone().normalize();
+    if(Cam.follow && Cam.target){
+      const tgt=Cam.target.clone(); tgt.y=clamp(tgt.y,-0.72,0.82); tgt.normalize();
+      cur.lerp(tgt,1-Math.exp(-dt*(RM?0.22:0.5))).normalize();
+    } else if(!Player.playing || !Cam.follow){
+      const a=dt*(RM?0.012:0.035); const cx=cur.x, cz=cur.z; cur.x=cx*Math.cos(a)-cz*Math.sin(a); cur.z=cx*Math.sin(a)+cz*Math.cos(a);
+    }
+    camera.position.copy(cur.multiplyScalar(dist)); camera.lookAt(0,0,0);
+  }
+  if(Cam.shake>0.0004 && !RM){ camera.rotateX((Math.random()-0.5)*Cam.shake); camera.rotateY((Math.random()-0.5)*Cam.shake); }
+  Cam.shake*=Math.exp(-dt*3.2);
+}
+function layoutGlobe(){
+  if(!renderer) return;
+  const app=$('#app').getBoundingClientRect(), W=app.width, H=app.height;
+  renderer.setSize(W,H,false); composer.setSize(W,H); camera.aspect=W/H;
+  const mob=mqMobile.matches, top=$('#topbar').getBoundingClientRect().bottom-app.top+8;
+  const bottom=(mob? $('#now').getBoundingClientRect().top : $('#deck').getBoundingClientRect().top)-app.top-8;
+  const right=mob? W : $('#panel').getBoundingClientRect().left-app.left-12;
+  const cx=right/2, cy=(top+bottom)/2, availW=right, availH=Math.max(140,bottom-top);
+  camera.setViewOffset(W,H,W/2-cx,H/2-cy,W,H); camera.updateProjectionMatrix();
+  const f=(H/2)/Math.tan(camera.fov*DEG/2), px=0.5*Math.min(availW*0.9,availH*0.92);
+  const d=clamp(Math.sqrt((f/px)**2+1),1.9,12);
+  const ratio=camera.position.length()/baseDist; baseDist=d;
+  camera.position.setLength(clamp(d*(isFinite(ratio)&&ratio>0?ratio:1),d*0.5,d*2.2));
+  controls.minDistance=d*0.45; controls.maxDistance=d*2.4;
+}
+
+/* ================= Player ================= */
+const SPEEDS=[[0.5,'느리게'],[1,'보통 속도'],[2,'빠르게'],[4,'아주 빠르게']];
+const Player={s:null,p:0,playing:false,speedI:store.get('speedI',1),slow:1,next:0,started:false,
+  get speed(){ return SPEEDS[this.speedI][0]; },
+  load(s,{autoplay=false,keepReal=null}={}){
+    prepare(s); this.s=s; this.p=keepReal!=null? pAtReal(s,keepReal) : 0; this.next=firstIdxAfter(s,this.p); this.slow=1;
+    vq.length=0; setQuakePoints(s); resetPlayed(s,this.next);
+    if(U.uRip) for(const r of U.uRip.value) r.w=-1e4;
+    if(HAS3 && camera){ Cam.attn=[]; Cam.target=new THREE.Vector3(s.focus.x,s.focus.y,s.focus.z); Cam.hold=0; }
+    UI.onScene(s); store.set('scene',s.key);
+    if(autoplay) this.play(); else drawTimeline();
+  },
+  play(){ if(!this.s) return; if(this.p>=this.s.total-0.01){ this.seek(0); } this.playing=true; UI.setPlay(true); },
+  pause(){ this.playing=false; UI.setPlay(false); },
+  toggle(){ this.playing? this.pause() : this.play(); },
+  seek(p){ const s=this.s; this.p=clamp(p,0,s.total); this.next=firstIdxAfter(s,this.p); for(let i=vq.length-1;i>=0;i--) if(vq[i].kind==='q') vq.splice(i,1); resetPlayed(s,this.next); drawTimeline(); UI.tickClock(true); UI.hideCaption(); },
+  seekEvent(e){ this.seek(Math.max(0,this.s.r[e.i]-0.6)); if(!this.playing) this.play(); },
+  update(dt){
+    const s=this.s; if(!s) return;
+    this.slow+=(1-this.slow)*Math.min(1,dt*0.55);
+    if(!this.playing) return;
+    const rate=this.speed*this.slow;
+    if(live.on && s.kind==='now' && this.p>=s.r[s.r.length-1]){ this.p=s.r[s.r.length-1]+0.001; }
+    else this.p+=dt*rate;
+    const horizon=this.p+0.16*rate, ev=s.events, r=s.r;
+    while(this.next<ev.length && r[this.next]<=horizon){ emitQuake(ev[this.next], clockNow()+Math.max(0,(r[this.next]-this.p)/rate), true); this.next++; }
+    if(this.p>=s.total){ this.p=0; this.next=0; resetPlayed(s,0); UI.toast(`${s.kind==='now'?'하루':'기록'}의 처음부터 다시 들려드려요`); }
+  }
+};
+function firstIdxAfter(s,p){ let lo=0,hi=s.r.length; while(lo<hi){ const m=(lo+hi)>>1; if(s.r[m]<p) lo=m+1; else hi=m; } return lo; }
+
+/* ================= Event clock & queues ================= */
+let vtime=0;
+const clockNow = () => vtime; // visuals live on the frame clock; audio converts with Sound.at()
+const vq=[];
+function fireQueues(){
+  const now=clockNow(); let due=null;
+  for(let i=vq.length-1;i>=0;i--){ if(vq[i].at<=now){ (due||(due=[])).push(vq[i]); vq.splice(i,1); } }
+  if(due){ due.sort((a,b)=>a.at-b.at); for(const it of due){ if(it.kind==='q') onQuakeVisual(it.e,it.user); else Heart.onBeat(); } }
+}
+const _v=HAS3? new THREE.Vector3():null;
+function spatial(e){
+  if(!camera) return {pan:0,far:0};
+  const camDir=camera.position.clone().normalize(), facing=e.vec.dot(camDir);
+  _v.copy(e.vec).project(camera);
+  return {pan:clamp(_v.x,-1,1)*0.9, far:clamp((0.15-facing)*1.6,0,1)*(U.uXray.value>0.5?0.4:1)};
+}
+function emitQuake(e,at,fromPlayback){
+  if(Sound.live()){
+    const sp=spatial(e), ta=Sound.at(at); Sound.quake(e,ta,sp);
+    if(Adopt.has(e)) Sound.motif(e,ta);
+    if(e.mag>=7) Sound.duck(ta,1.2);
+  }
+  vq.push({at:at+Sound.lat(),kind:'q',e,user:!fromPlayback});
+}
+
+/* ================= Heart ================= */
+const Heart={bpm:62,adr:0,next:0,env:0,
+  update(dt){
+    const s=Player.s;
+    if(s){ const tr=(!started && s.kind==='now')? s.tEnd : realAt(s,Player.p), a=activityAt(s,tr); this.target=bpmFor(a); Sound.setActivity(clamp(a/60,0,1)); }
+    this.adr*=Math.exp(-dt/7);
+    const goal=clamp((this.target||62)+this.adr,48,178); this.bpm+=(goal-this.bpm)*Math.min(1,dt*0.9);
+    const now=clockNow(); if(this.next<now-0.4) this.next=now+0.05;
+    while(this.next<now+0.16){ const at=this.next; if(Sound.live()) Sound.beat(Sound.at(at),0.72+0.28*clamp((this.bpm-60)/80,0,1)); vq.push({at:at+Sound.lat(),kind:'b'}); this.next+=60/this.bpm; }
+    this.env*=Math.exp(-dt*6.5);
+  },
+  onBeat(){ this.env=1; UI.beat(); SeisSynth.kick(0.18); },
+  shock(m){ this.adr=Math.max(this.adr,adrFor(m)); if(m>=7) this.next+=0.85; }
+};
+
+/* ================= Visual reaction to a quake ================= */
+let lastEv=null;
+function onQuakeVisual(e,user){
+  if(renderer){
+    spawnRipple(e); if(e.mag>=6) spawnRipple(e,{speed:1.75,col:[0.78,0.88,1.0],w:0.5,thin:0.6}); spawnBeam(e); if(e.mag>=Player.s.ringThr || user) spawnRing(e);
+    if(Player.s && Player.s.events[e.i]===e) markPlayed(e.i,U.uTime.value);
+    Cam.attn.push({v:e.vec,w:Math.pow(10,0.35*Math.max(0,e.mag))*(e.hl?4:1),t:U.uTime.value});
+    if(user){ Cam.attn.push({v:e.vec,w:1e4,t:U.uTime.value}); }
+  }
+  Heart.shock(e.mag);
+  SeisSynth.kick(0.25+0.11*Math.max(0,e.mag));
+  UI.showNow(e); lastEv=e;
+  if(!user && e.hl) UI.caption(e);
+  if(e.mag>=6.4 && (e.hl || e.mag>=7)){
+    FX.flash=Math.min(1.0,0.45+(e.mag-6)*0.2); Cam.shake=Math.max(Cam.shake,0.0035*(e.mag-5.8));
+    if(e.mag>=7 && !user && !RM) Player.slow=0.32;
+  }
+  if(Adopt.has(e)){ Adopt.beat(e,user); if(renderer) spawnHearts(e); }
+}
+const FX={flash:0};
+
+/* ================= Adoption ================= */
+const PRESETS=[
+  {id:'korea',name:'한반도',lat:36.3,lon:127.8,rkm:450},{id:'japan',name:'일본 열도',lat:36.5,lon:139.5,rkm:1300},
+  {id:'cal',name:'캘리포니아',lat:36.5,lon:-119.5,rkm:650},{id:'alaska',name:'알래스카',lat:61.5,lon:-150,rkm:900},
+  {id:'aleut',name:'알류샨 열도',lat:52.5,lon:-175,rkm:1300},{id:'hawaii',name:'하와이',lat:19.6,lon:-155.5,rkm:350},
+  {id:'carib',name:'푸에르토리코',lat:18.3,lon:-66.5,rkm:500},{id:'panama',name:'파나마·중미',lat:9.5,lon:-83,rkm:1100},
+  {id:'andes',name:'안데스',lat:-22,lon:-70,rkm:1700},{id:'indo',name:'인도네시아',lat:-3,lon:118,rkm:2300},
+  {id:'tonga',name:'통가·피지 해구',lat:-20,lon:-177,rkm:1000},{id:'kamchatka',name:'캄차카·쿠릴',lat:51,lon:158,rkm:900},
+  {id:'texas',name:'미국 중남부',lat:33.5,lon:-101,rkm:800},{id:'yellow',name:'옐로스톤·유타',lat:41.5,lon:-111.5,rkm:500},
+  {id:'himalaya',name:'히말라야',lat:28.5,lon:85,rkm:900},{id:'anatolia',name:'아나톨리아',lat:38,lon:36.5,rkm:700}
+];
+const PET_NAMES=['쿵쿵이','두근이','꿈틀이','들썩이','콩닥이','흔들이','덜컹이'];
+const Adopt={a:store.get('adopt',null), beats:store.get('beats',0), picking:false,
+  has(e){ const a=this.a; return !!a && haversine(a.lat,a.lon,e.lat,e.lon)<=a.rkm; },
+  set(p){ const born=this.a&&this.a.born || Date.now(); this.a={name:(this.a&&this.a.name)||PET_NAMES[Math.floor(Math.random()*PET_NAMES.length)],label:p.name,lat:p.lat,lon:p.lon,rkm:p.rkm,born}; store.set('adopt',this.a); placeAdoptMarker(this.a); UI.renderAdopt(); UI.toast(`${josa(this.a.name,['과','와'])} 함께해요 · ${p.name}`);
+    if(camera){ Cam.target=latLonToVec(p.lat,p.lon,1); Cam.attn=[]; Cam.hold=0; } },
+  clear(){ this.a=null; store.set('adopt',null); placeAdoptMarker(null); UI.renderAdopt(); },
+  beat(e,user){ if(!user){ this.beats++; store.set('beats',this.beats); } UI.toast(`${josa(this.a.name,['이','가'])} 두근했어요 · M${e.mag.toFixed(1)} · ${e.ko.main}`); UI.renderAdoptStats(); },
+  statsFor(s){ const list=s.events.filter(e=>this.has(e)); return {list, n:list.length, max:list.reduce((a,b)=>!a||b.mag>a.mag?b:a,null), avgDepth:list.length? list.reduce((a,b)=>a+b.depth,0)/list.length : 0}; }
+};
+function persona(name,st,s){
+  const nm=josa(name,['은','는']);
+  if(!st.n) return `${nm} 이 기록 속에서 조용히 자고 있어요. 다른 시간으로 여행하면 목소리를 들을 수 있을지도 몰라요.`;
+  if(st.max && st.max.mag>=6) return `${nm} 이때 정말 크게 울었어요. 가장 큰 울음은 규모 ${st.max.mag.toFixed(1)}였어요.`;
+  if(st.avgDepth>150) return `${nm} 속이 깊은 아이예요. 평균 ${Math.round(st.avgDepth)} km 아래에서 낮고 길게 말해요.`;
+  if(st.n>=20) return `${nm} 수다쟁이예요. 이 기록에서만 ${st.n}번이나 말을 걸어요.`;
+  if(st.max && st.max.mag>=4.5) return `${nm} 평소엔 얌전하다가 가끔 크게 울어요.`;
+  return `${nm} 가끔 작은 목소리로 안부를 전해요. 이 기록에서는 ${st.n}번이에요.`;
+}
+
+/* ================= Seismograph strip ================= */
+const SeisSynth={amp:0,kick(a){ this.amp=Math.min(1.2,this.amp+a); }};
+const Seis={cv:null,x:null,data:[],w:0,h:0,grad:null,gradKey:''};
+function drawSeismo(dt){
+  const c=Seis.cv, x=Seis.x, dpr=Math.min(2,window.devicePixelRatio||1);
+  const w=c.clientWidth, h=c.clientHeight; if(!w||!h) return;
+  if(c.width!==Math.round(w*dpr)||c.height!==Math.round(h*dpr)){ c.width=Math.round(w*dpr); c.height=Math.round(h*dpr); Seis.gradKey=''; }
+  let lo=0,hi=0;
+  if(Sound.live()){ const b=Sound.buf; Sound.analyser.getFloatTimeDomainData(b); for(let i=0;i<b.length;i+=2){ const v=b[i]; if(v<lo) lo=v; if(v>hi) hi=v; } U.uAudio && (U.uAudio.value+=((hi-lo)*0.6-U.uAudio.value)*0.2); }
+  else { const a=SeisSynth.amp; lo=-(0.004+a*Math.random()*0.5); hi=0.004+a*Math.random()*0.5; }
+  SeisSynth.amp*=Math.exp(-dt*3.2);
+  const N=Math.ceil(w/2); Seis.data.push(lo,hi); while(Seis.data.length>N*2) Seis.data.splice(0,2);
+  const col=lastEv? lastEv.rgb : [0.6,0.7,1], key=col.join(',')+c.width;
+  if(Seis.gradKey!==key){ const g=x.createLinearGradient(0,0,c.width,0); g.addColorStop(0,'rgba(120,135,180,0.05)'); g.addColorStop(0.7,css(col,0.55)); g.addColorStop(1,css(col,1)); Seis.grad=g; Seis.gradKey=key; }
+  x.setTransform(1,0,0,1,0,0); x.clearRect(0,0,c.width,c.height); x.scale(dpr,dpr);
+  x.fillStyle='rgba(150,170,255,0.10)'; x.fillRect(0,h/2,w,1);
+  const f=v=>Math.sign(v)*Math.log1p(Math.abs(v)*36)/Math.log1p(36);
+  x.strokeStyle=Seis.grad; x.lineWidth=1.2; x.beginPath();
+  const n=Seis.data.length/2;
+  for(let k=0;k<n;k++){ const px=w-(n-k)*2; x.moveTo(px,h/2-f(Seis.data[k*2+1])*h*0.47); x.lineTo(px,h/2-f(Seis.data[k*2])*h*0.47+0.5); }
+  x.stroke();
+  x.setTransform(1,0,0,1,0,0);
+}
+
+/* ================= Timeline ================= */
+const TL={cv:null,x:null,drag:false};
+function drawTimeline(){
+  const s=Player.s, c=TL.cv; if(!s||!c) return; const x=TL.x, dpr=Math.min(2,window.devicePixelRatio||1);
+  const w=c.clientWidth, h=c.clientHeight; if(!w||!h) return;
+  if(c.width!==Math.round(w*dpr)||c.height!==Math.round(h*dpr)){ c.width=Math.round(w*dpr); c.height=Math.round(h*dpr); }
+  x.setTransform(dpr,0,0,dpr,0,0); x.clearRect(0,0,w,h);
+  const t0=s.tStart, span=Math.max(1,s.tEnd-t0), X=t=>4+(t-t0)/span*(w-8);
+  const cur=realAt(s,Player.p);
+  x.fillStyle='rgba(150,170,255,0.08)'; x.fillRect(0,h-1,w,1);
+  const step = span<=36*3600e3 ? 3*3600e3 : span<=4*86400e3 ? 12*3600e3 : 86400e3;
+  x.fillStyle='rgba(150,170,255,0.18)';
+  const k0=Math.ceil((t0+9*3600e3)/step)*step-9*3600e3;
+  for(let t=k0;t<=s.tEnd;t+=step){ x.fillRect(Math.round(X(t)),0,1,h); }
+  const range=Math.max(0.5,s.magMax-s.magMin);
+  for(const e of s.events){
+    const px=X(e.t), hh=3+(h-8)*Math.pow(clamp((e.mag-s.magMin)/range,0,1),1.3), played=e.t<=cur;
+    x.fillStyle=css(e.rgb, played?0.95:0.28); x.fillRect(px-0.8,h-1-hh,1.6,hh);
+    if(e.hl){ x.fillStyle=played?'#fff':'rgba(255,255,255,0.45)'; x.beginPath(); x.arc(px,h-3-hh,2.2,0,Math.PI*2); x.fill(); }
+  }
+  const px=X(clamp(cur,t0,s.tEnd));
+  x.fillStyle='rgba(255,61,110,0.25)'; x.fillRect(px-3,0,6,h);
+  x.fillStyle='#ff3d6e'; x.fillRect(px-1,0,2,h);
+}
+function tlSeek(clientX){
+  const s=Player.s, r=TL.cv.getBoundingClientRect(), f=clamp((clientX-r.left-4)/(r.width-8),0,1);
+  Player.seek(pAtReal(s,s.tStart+f*(s.tEnd-s.tStart)));
+}
+
+/* ================= UI ================= */
+const UI={
+  clockKey:'',
+  init(){
+    TL.cv=$('#timeline'); TL.x=TL.cv.getContext('2d'); Seis.cv=$('#seismo'); Seis.x=Seis.cv.getContext('2d');
+    $('#playBtn').onclick=()=>{ ensureStarted(false); Player.toggle(); };
+    $('#speedBtn').onclick=()=>{ Player.speedI=(Player.speedI+1)%SPEEDS.length; store.set('speedI',Player.speedI); this.setSpeed(); };
+    $('#xrayBtn').onclick=()=>this.setXray(!this.xray);
+    $('#followBtn').onclick=()=>{ Cam.follow=!Cam.follow; store.set('follow',Cam.follow); $('#followBtn').setAttribute('aria-pressed',Cam.follow); if(Cam.follow) Cam.hold=0; };
+    $('#muteBtn').onclick=()=>{ if(!Sound.ready){ ensureStarted(true); return; } Sound.setMuted(!Sound.muted); this.setMute(); };
+    $('#menuBtn').onclick=()=>this.sheet(!$('#panel').classList.contains('open'));
+    $('#sheetClose').onclick=()=>this.sheet(false);
+    document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>this.tab(b.dataset.tab));
+    $('#startBtn').onclick=()=>ensureStarted(true,true);
+    $('#silentBtn').onclick=()=>ensureStarted(false,true);
+    TL.cv.addEventListener('pointerdown',e=>{ TL.drag=true; TL.cv.setPointerCapture(e.pointerId); tlSeek(e.clientX); });
+    TL.cv.addEventListener('pointermove',e=>{ if(TL.drag) tlSeek(e.clientX); });
+    TL.cv.addEventListener('pointerup',()=>{ TL.drag=false; });
+    TL.cv.addEventListener('pointercancel',()=>{ TL.drag=false; });
+    this.setSpeed(); $('#followBtn').setAttribute('aria-pressed',Cam.follow);
+    this.renderScenes(); this.renderSound(); this.renderAdopt();
+    addEventListener('keydown',e=>{
+      if(e.target.tagName==='INPUT') return;
+      if(e.code==='Space'){ e.preventDefault(); ensureStarted(false); Player.toggle(); }
+      else if(e.key==='x'||e.key==='X') this.setXray(!this.xray);
+      else if(e.key==='m'||e.key==='M') $('#muteBtn').click();
+      else if(e.key==='ArrowRight'&&Player.s){ const i=Math.min(Player.s.events.length-1,Player.next); Player.seekEvent(Player.s.events[i]); }
+      else if(e.key==='ArrowLeft'&&Player.s){ const i=Math.max(0,Player.next-2); Player.seekEvent(Player.s.events[i]); }
+    });
+  },
+  sheet(open){ $('#panel').classList.toggle('open',open); $('#menuBtn').setAttribute('aria-expanded',open); },
+  tab(k){ document.querySelectorAll('.tabs button').forEach(b=>b.setAttribute('aria-selected',b.dataset.tab===k)); document.querySelectorAll('.pane').forEach(p=>p.hidden=p.id!=='pane-'+k); },
+  setPlay(on){ $('#playIcon').setAttribute('d',on?'M4 2.5h3.6v13H4zM10.4 2.5H14v13h-3.6z':'M4 2.5v13l11-6.5z'); $('#playBtn').setAttribute('aria-label',on?'일시정지':'재생'); },
+  setSpeed(){ $('#speedBtn').textContent=SPEEDS[Player.speedI][1]; },
+  xray:false,
+  setXray(on){ this.xray=on; $('#xrayBtn').setAttribute('aria-pressed',on); if(on) this.toast('지구를 투명하게 했어요 · 깊이는 4배로 과장했어요'); },
+  setMute(){ const m=!Sound.ready||Sound.muted; $('#muteBtn').textContent=m?'소리 켜기':'소리 끄기'; $('#muteBtn').setAttribute('aria-pressed',m); },
+  beat(){ const h=$('#heartIcon'); if(h.animate && !RM) h.animate([{transform:'scale(1.22)'},{transform:'scale(0.96)',offset:0.45},{transform:'scale(1)'}],{duration:Math.min(420,60000/Heart.bpm*0.7),easing:'ease-out'}); },
+  _toastT:0,
+  toast(msg){ const t=$('#toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(this._toastT); this._toastT=setTimeout(()=>t.classList.remove('show'),2600); },
+  _capT:0,
+  hideCaption(){ clearTimeout(this._capT); $('#caption').classList.remove('show'); },
+  caption(e){ const c=$('#caption'); c.style.setProperty('--q',css(e.rgb)); $('#capMag').textContent='M '+e.mag.toFixed(1); $('#capTitle').textContent=e.hl; $('#capSub').textContent=`${fDate(e.t)} ${fHM(e.t)} · 깊이 ${fDepth(e.depth)}`; c.classList.add('show'); clearTimeout(this._capT); this._capT=setTimeout(()=>c.classList.remove('show'),e.mag>=7?5200:3800); },
+  showNow(e){
+    const n=$('#now'); n.style.setProperty('--q',css(e.rgb));
+    $('#nowMag').textContent=e.mag.toFixed(1); $('#nowPlace').textContent=e.ko.main; $('#nowOrig').textContent=e.ko.sub||'';
+    $('#nowWhen').textContent=`${fShort(e.t)}:${kst(e.t).second}`; $('#nowDepth').textContent='깊이 '+fDepth(e.depth);
+    $('#nowVoice').textContent=`${noteName(e.midi)}(${noteSol(e.midi)}) · ${VOICES[e.voice].name}`;
+    $('#nowLink').href='https://earthquake.usgs.gov/earthquakes/eventpage/'+encodeURIComponent(e.id);
+    $('#gaugeMark').style.top=`calc(${clamp(e.depth/700,0,1)*100}% - 1.5px)`;
+  },
+  tickClock(force){
+    const s=Player.s; if(!s) return; const t=realAt(s,Player.p), k=fDate(t)+fTime(t);
+    if(!force && k===this.clockKey) return; this.clockKey=k;
+    $('#clockDate').textContent=fDate(t); $('#clockTime').textContent=fTime(t);
+    $('#tlCount').textContent=`${Math.min(Player.next,s.events.length)} / ${s.events.length}`;
+  },
+  bpmShown:-1,
+  tickBpm(){ const b=Math.round(Heart.bpm); if(b!==this.bpmShown){ this.bpmShown=b; $('#bpmNum').textContent=b; $('#bpmMood').textContent=moodOf(b); } },
+  onScene(s){
+    $('#sceneTag').innerHTML=`<b>${s.year}</b> ${s.title}`;
+    $('#tlStart').textContent=fShort(s.tStart); $('#tlEnd').textContent=fShort(s.tEnd);
+    this.updateSrc();
+    document.querySelectorAll('.scene').forEach(b=>b.setAttribute('aria-pressed',b.dataset.key===s.key));
+    $('#sceneDetail').innerHTML=`<h3>${s.title}${s.date?` · ${s.date}`:''}</h3><p>${s.blurb}</p><span class="filter">${s.filter} · ${s.events.length}건 · 규모 ${s.magMin.toFixed(1)}–${s.magMax.toFixed(1)}</span>`;
+    this.renderDiary(s); this.renderAdoptStats(); this.tickClock(true);
+    const g=$('#gateLede'); if(g && s.kind==='now') g.textContent=`지난 24시간 동안 지구는 ${s.events.length}번 떨렸어요. 그 떨림 하나하나를 음표로 바꿔, 지구의 심장 소리로 들려드려요.`;
+    if(s.kind==='now'){ $('#gateBpm').innerHTML=`가장 최근 한 시간, 지구의 심박은 <b>${Math.round(bpmFor(activityAt(s,s.tEnd)))} BPM</b>이었어요.`; }
+  },
+  updateSrc(){
+    const s=Player.s; if(!s) return; const chip=$('#srcChip');
+    chip.classList.toggle('live',live.on&&s.kind==='now');
+    $('#srcText').textContent = s.kind==='past' ? 'USGS 지진 카탈로그' : live.on&&s.kind==='now' ? '실시간 · USGS 피드' : `USGS 기록 · ${fShort(Date.parse(DATA.fetchedAt))} 기준`;
+  },
+  renderScenes(){
+    const box=$('#sceneList'); box.innerHTML='';
+    for(const s of SCENES){
+      const mx=Math.max(...s.ev.map(a=>a[4]));
+      const b=document.createElement('button'); b.className='scene'; b.dataset.key=s.key; b.setAttribute('aria-pressed','false');
+      b.innerHTML=`<span class="sc-year">${s.year}</span><span class="sc-body"><span class="sc-title">${s.title}</span><span class="sc-meta">${s.date||s.filter} · ${s.ev.length}건</span></span><span class="sc-mag">M${mx.toFixed(1)}</span>`;
+      b.onclick=()=>{ ensureStarted(false); Player.load(s,{autoplay:true}); if(mqMobile.matches) this.sheet(false); };
+      box.appendChild(b);
+    }
+  },
+  renderDiary(s){
+    const p=$('#pane-diary'); const d=s.diary; p.innerHTML='';
+    const h=document.createElement('p'); h.className='headline'; h.innerHTML=d[0].head; p.appendChild(h);
+    const ul=document.createElement('ul'); ul.className='diary';
+    for(const it of d.slice(1)){
+      const li=document.createElement('li'); li.innerHTML=`<span class="k">${it.k}</span><span class="v">${it.v}</span>`;
+      if(it.e){ const b=document.createElement('button'); b.className='btn small go'; b.textContent='▶ 듣기'; b.onclick=()=>{ ensureStarted(false); Player.seekEvent(it.e); }; li.appendChild(b); }
+      ul.appendChild(li);
+    }
+    p.appendChild(ul);
+    const note=document.createElement('p'); note.className='src-note'; note.textContent='모든 숫자는 위 USGS 기록에서 바로 계산했어요. 심박은 재생 시각 기준 직전 한 시간의 지진 수와 규모로 정해요.'; p.appendChild(note);
+  },
+  renderAdopt(){
+    const p=$('#pane-adopt'), a=Adopt.a; p.innerHTML='';
+    if(!a){
+      p.innerHTML=`<p class="headline">지진대 하나를 <b>입양</b>해 보세요.</p><p class="lede">그곳이 흔들릴 때마다 당신만을 위한 짧은 멜로디가 울리고, 지구 위에 하트가 피어나요. 이름도 지어줄 수 있어요.</p><div class="regions" id="regionBtns"></div><div class="row"><button class="btn" id="pickBtn">지구 위에서 직접 고르기</button></div>`;
+      const box=p.querySelector('#regionBtns');
+      for(const r of PRESETS){ const b=document.createElement('button'); b.className='btn'; b.textContent=r.name; b.onclick=()=>Adopt.set(r); box.appendChild(b); }
+      p.querySelector('#pickBtn').onclick=()=>startPick();
+      return;
+    }
+    p.innerHTML=`<div class="pet"><div class="pet-face"><svg viewBox="0 0 32 29" aria-hidden="true"><path d="M16 28.5C6 21 0 15.5 0 8.6 0 3.6 3.9 0 8.6 0c3 0 5.8 1.6 7.4 4.2C17.6 1.6 20.4 0 23.4 0 28.1 0 32 3.6 32 8.6 32 15.5 26 21 16 28.5z"/></svg></div>
+      <div><label class="eyebrow" for="petName">내 지진대 이름</label><input id="petName" maxlength="12" value=""><div class="where">${a.label} · 반경 ${a.rkm.toLocaleString('ko-KR')} km · ${fYMD(a.born)}부터 함께</div></div></div>
+      <div class="stats" id="petStats"></div><p class="persona" id="persona"></p>
+      <div class="row"><button class="btn" id="petGo">이 기록에서 들려줘</button><button class="btn" id="petMove">다른 곳으로 이사</button></div>`;
+    const inp=p.querySelector('#petName'); inp.value=a.name;
+    inp.onchange=()=>{ a.name=inp.value.trim()||a.name; inp.value=a.name; store.set('adopt',a); this.renderAdoptStats(); };
+    p.querySelector('#petMove').onclick=()=>{ Adopt.clear(); };
+    p.querySelector('#petGo').onclick=()=>{ const st=Adopt.statsFor(Player.s); if(st.n){ ensureStarted(false); Player.seekEvent(st.max); } else this.toast('이 기록에는 아직 목소리가 없어요. 시간 여행 탭에서 다른 날을 골라보세요'); };
+    this.renderAdoptStats();
+  },
+  renderAdoptStats(){
+    const a=Adopt.a, box=$('#petStats'); if(!a||!box||!Player.s) return;
+    const st=Adopt.statsFor(Player.s);
+    box.innerHTML=`<div class="stat"><b>${st.n}</b><span>이 기록 속 박동</span></div><div class="stat"><b>${st.max?'M'+st.max.mag.toFixed(1):'–'}</b><span>가장 큰 울음</span></div><div class="stat"><b>${Adopt.beats}</b><span>함께 들은 박동</span></div>`;
+    $('#persona').textContent=persona(a.name,st,Player.s);
+  },
+  renderSound(){
+    const row=$('#scaleRow'); row.innerHTML='';
+    for(const m of [1,3,5,6,7,9]){ const n=magMidi(m); const d=document.createElement('div'); d.innerHTML=`<b>M${m}</b><span>${noteName(n)} ${noteSol(n)}</span>`; row.appendChild(d); }
+    const vl=$('#voiceList'); vl.innerHTML='';
+    VOICES.forEach((v,i)=>{
+      const el=document.createElement('div'); el.className='voice'; el.style.color=css(depthRGB(v.depth));
+      el.innerHTML=`<i></i><div style="color:var(--ink)"><span class="vn">${v.name}</span><span class="vr">${v.range}</span><p>${v.desc}</p></div>`;
+      const b=document.createElement('button'); b.className='btn small'; b.textContent='▶ 미리 듣기'; b.style.color='var(--ink)';
+      b.onclick=()=>{ ensureStarted(true); const fake={mag:3.2,depth:v.depth,voice:i,midi:magMidi(3.2)}; setTimeout(()=>{ if(Sound.live()) Sound.quake(fake,Sound.ctx.currentTime+0.05,{pan:0,far:0}); },60); };
+      el.appendChild(b); vl.appendChild(el);
+    });
+    $('#srcNote').innerHTML=`데이터: <a href="https://earthquake.usgs.gov/earthquakes/feed/" target="_blank" rel="noopener">USGS 지진 피드</a>와 <a href="https://earthquake.usgs.gov/fdsnws/event/1/" target="_blank" rel="noopener">FDSN 지진 카탈로그</a>. 지도: Natural Earth (world-atlas). 최근 기록은 ${fShort(Date.parse(DATA.fetchedAt))}(한국 시각)에 받았어요.`;
+  }
+};
+function startPick(){
+  if(!renderer){ UI.toast('이 기기에서는 지구 위에서 고를 수 없어요. 목록에서 골라주세요'); return; }
+  Adopt.picking=true; $('#gl').classList.add('picking'); $('#pickHint').hidden=false; if(mqMobile.matches) UI.sheet(false);
+}
+
+/* ================= Picking on the globe ================= */
+let downAt=null;
+function bindPicking(){
+  const c=$('#gl');
+  c.addEventListener('pointerdown',e=>{ downAt={x:e.clientX,y:e.clientY,t:performance.now()}; });
+  c.addEventListener('pointerup',e=>{ if(!downAt) return; const moved=Math.hypot(e.clientX-downAt.x,e.clientY-downAt.y), quick=performance.now()-downAt.t<600; downAt=null; if(moved<7&&quick) tap(e.clientX,e.clientY); });
+}
+function tap(cx,cy){
+  const r=$('#gl').getBoundingClientRect(), x=cx-r.left, y=cy-r.top;
+  const ndc=new THREE.Vector2(x/r.width*2-1,-(y/r.height)*2+1);
+  if(Adopt.picking){
+    raycaster.setFromCamera(ndc,camera); const hit=raycaster.intersectObject(ocean)[0];
+    Adopt.picking=false; $('#gl').classList.remove('picking'); $('#pickHint').hidden=true;
+    if(hit){ const p=hit.point.clone().normalize(), lat=Math.asin(p.y)/DEG; let lon=Math.atan2(p.z,-p.x)/DEG-180; if(lon<-180) lon+=360;
+      Adopt.set({name:`${Math.abs(lat).toFixed(1)}°${lat>=0?'N':'S'} ${Math.abs(lon).toFixed(1)}°${lon>=0?'E':'W'}`,lat,lon,rkm:700}); UI.tab('adopt'); }
+    return;
+  }
+  const s=Player.s; if(!s) return;
+  const camN=camera.position.clone().normalize(), horizon=1/camera.position.length(), xr=U.uXray.value>0.5;
+  let best=null,bd=(COARSE?26:16)**2; const v=new THREE.Vector3();
+  for(const e of s.events){
+    if(!xr && e.vec.dot(camN)<horizon) continue;
+    v.copy(e.vec).multiplyScalar(lerp(1.007,e.dr,U.uXray.value)).project(camera);
+    const sx=(v.x*0.5+0.5)*r.width, sy=(-v.y*0.5+0.5)*r.height, d=(sx-x)**2+(sy-y)**2; if(d<bd){bd=d;best=e;}
+  }
+  if(best){ ensureStarted(false); emitQuake(best,clockNow()+0.03,false); }
+}
+
+/* ================= Start / gate ================= */
+let started=false;
+function ensureStarted(withSound,fromGate){
+  if(!started){
+    started=true; $('#gate').classList.add('out'); setTimeout(()=>{ const g=$('#gate'); if(g) g.hidden=true; },1000);
+    if(Sound.init()){ Sound.muted=!withSound; Sound.start(); }
+    UI.setMute(); if(fromGate) Player.play();
+    return;
+  }
+  if(withSound){ if(!Sound.ready && Sound.init()){ Sound.start(); } if(Sound.ready){ if(Sound.ctx.state!=='running') Sound.ctx.resume(); if(Sound.muted){ Sound.setMuted(false); } } UI.setMute(); }
+  else if(Sound.ready && Sound.ctx.state!=='running') Sound.ctx.resume();
+}
+document.addEventListener('visibilitychange',()=>{ if(!Sound.ready) return; if(document.hidden) Sound.ctx.suspend(); else if(started) Sound.ctx.resume(); });
+
+/* ================= Live feed (works where the browser may reach USGS directly) ================= */
+const live={on:false};
+async function tryLive(){
+  try{
+    const ctl=new AbortController(), to=setTimeout(()=>ctl.abort(),8000);
+    const res=await fetch('https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.geojson',{signal:ctl.signal,cache:'no-store'}); clearTimeout(to);
+    if(!res.ok) return; const j=await res.json(); if(!j||!j.features||j.features.length<5) return;
+    applyLive(j); live.on=true; UI.updateSrc(); setInterval(pollLive,60000);
+  }catch(e){ /* the page keeps the bundled USGS snapshot */ }
+}
+async function pollLive(){ try{ const r=await fetch('https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.geojson',{cache:'no-store'}); if(r.ok) applyLive(await r.json()); }catch(e){} }
+function applyLive(j){
+  const rows=j.features.filter(f=>f.properties&&f.properties.mag!=null&&f.geometry).map(f=>({t:f.properties.time,lat:f.geometry.coordinates[1],lon:f.geometry.coordinates[0],depth:f.geometry.coordinates[2],mag:f.properties.mag,id:f.id,place:f.properties.place||''})).sort((a,b)=>a.t-b.t);
+  if(rows.length<5) return;
+  const s=SCENES.find(x=>x.key==='now'); const t0=rows[0].t;
+  const sameTail = s.prepared && s.ev.length && s.ev[s.ev.length-1][5]===rows[rows.length-1].id && s.ev.length===rows.length;
+  if(sameTail) return;
+  const keep = Player.s===s ? realAt(s,Player.p) : null;
+  s.t0=t0/1000; s.ev=rows.map(r=>[(r.t-t0)/1000,r.lat,r.lon,r.depth,r.mag,r.id,r.place]); s.prepared=false;
+  if(Player.s===s){ prepare(s); const playing=Player.playing; Player.load(s,{keepReal:keep}); if(playing) Player.play(); }
+  else prepare(s);
+  UI.renderScenes(); if(Player.s) document.querySelectorAll('.scene').forEach(b=>b.setAttribute('aria-pressed',b.dataset.key===Player.s.key));
+}
+
+/* ================= Main loop ================= */
+let lastMs=performance.now();
+function frame(){
+  requestAnimationFrame(frame);
+  const nowMs=performance.now(); const dt=Math.min(0.1,(nowMs-lastMs)/1000); lastMs=nowMs; vtime+=dt;
+  if(U.uTime) U.uTime.value+=dt;
+  Player.update(dt); Heart.update(dt); fireQueues();
+  if(renderer){
+    const xt=UI.xray?1:0; U.uXray.value+=(xt-U.uXray.value)*Math.min(1,dt*2.2);
+    U.uBeat.value=Heart.env; FX.flash*=Math.exp(-dt*1.6); U.uFlash.value=FX.flash;
+    if(!Sound.live()) U.uAudio.value*=Math.exp(-dt*4);
+    if(Player.s) U.uSun.value.copy(sunDir(realAt(Player.s,Player.p)));
+    const xr=U.uXray.value; ocean.material.depthWrite=xr<0.02;
+    core.visible=xr>0.01; core.scale.setScalar(1+Heart.env*0.12); coreGlow.visible=xr>0.01; coreGlow.material.opacity=xr*(0.28+Heart.env*0.32); coreGlow.scale.setScalar(0.7+Heart.env*0.2);
+    shell.material.opacity=xr*0.16;
+    bloom.strength=0.85+Heart.env*0.12+FX.flash*0.5; finalPass.uniforms.uTime.value=vtime; finalPass.uniforms.uAberr.value=0.0012+FX.flash*0.006;
+    if(adoptGroup.visible){ const hs=adoptGroup.userData.heart; hs.scale.setScalar(0.06+Heart.env*0.022); const c=adoptGroup.userData.center, cn=camera.position.clone().normalize(); hs.material.opacity=c.dot(cn)>0.05||xr>0.5?0.95:0; }
+    updateCamera(dt); updatePools(); composer.render();
+  }
+  drawSeismo(dt);
+  if(Player.playing||TL.drag) drawTimeline();
+  UI.tickClock(false); UI.tickBpm();
+}
+
+/* ================= Boot ================= */
+function boot(){
+  const ok=initGL();
+  if(!ok){ const d=document.createElement('div'); d.className='nogl'; d.textContent='이 기기에서는 3D 지구를 그릴 수 없어요. 소리와 타임라인은 그대로 쓸 수 있어요.'; $('#app').insertBefore(d,$('#hud')); $('#gl').style.display='none'; }
+  else bindPicking();
+  UI.init();
+  const want=store.get('scene','now'), s=SCENES.find(x=>x.key===want)||SCENES[0];
+  Player.load(s,{});
+  if(ok){ const f=s.focus; camera.position.set(f.x,f.y,f.z).normalize().multiplyScalar(baseDist); }
+  placeAdoptMarker(Adopt.a);
+  const relayout=()=>{ if(ok) layoutGlobe(); drawTimeline(); };
+  relayout(); if(ok){ const f=Player.s.focus; camera.position.set(f.x,f.y+0.25,f.z).normalize().multiplyScalar(baseDist); }
+  addEventListener('resize',relayout); mqMobile.addEventListener && mqMobile.addEventListener('change',relayout);
+  if(document.fonts && document.fonts.ready) document.fonts.ready.then(relayout);
+  if(window.ResizeObserver){ const ro=new ResizeObserver(()=>relayout()); ro.observe($('#topbar')); ro.observe($('#deck')); }
+  requestAnimationFrame(frame);
+  tryLive();
+}
+boot();
+})();
+</script>
