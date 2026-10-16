@@ -54,6 +54,11 @@ button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid var(-
 .pill{display:inline-flex;align-items:center;gap:6px;font:500 11.5px/1 var(--f-body);padding:6px 9px;border-radius:999px;background:rgba(10,14,30,.55);border:1px solid var(--line);color:var(--ink-2);white-space:nowrap}
 .pill .dot{width:6px;height:6px;border-radius:50%;background:var(--ink-3)}
 .pill.live .dot{background:#5dff9d;box-shadow:0 0 8px #5dff9d}
+.pill.live.waiting .dot{animation:livePulse 1.6s ease-in-out infinite}
+@keyframes livePulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(.7)}}
+button.pill{cursor:pointer}
+.pill.live-go{color:#d9ffe9;border-color:rgba(93,255,157,.45);background:rgba(18,58,40,.55)}
+.pill.live-go:hover{background:rgba(26,84,57,.7)}
 .pill.scene{color:var(--ink)}
 .pill.scene b{font-family:var(--f-mono);font-weight:600;color:var(--gold)}
 
@@ -223,7 +228,7 @@ h3{margin:0;font:500 15px/1.3 var(--f-display);text-wrap:balance}
   #caption{top:20%}
 }
 @media (max-width:420px){.chips .pill.scene{max-width:62vw;overflow:hidden;text-overflow:ellipsis}}
-@media (prefers-reduced-motion:reduce){#gate,#caption,#toast,#panel{transition:none}}
+@media (prefers-reduced-motion:reduce){#gate,#caption,#toast,#panel{transition:none}.pill.live.waiting .dot{animation:none}}
 </style>
 </head>
 <body>
@@ -235,7 +240,7 @@ h3{margin:0;font:500 15px/1.3 var(--f-display);text-wrap:balance}
       <div class="brand">
         <div class="logo">Earth <b>BPM</b></div>
         <div class="clock"><span id="clockDate">–</span><span id="clockTime">--:--:--</span><span class="kst">KST</span></div>
-        <div class="chips"><span class="pill scene" id="sceneTag"><b>NOW</b> 지금 이 순간</span><span class="pill" id="srcChip"><span class="dot"></span><span id="srcText">USGS 기록</span></span></div>
+        <div class="chips"><span class="pill scene" id="sceneTag"><b>NOW</b> 지금 이 순간</span><span class="pill" id="srcChip"><span class="dot"></span><span id="srcText">USGS 기록</span></span><button class="pill live-go" id="liveBtn" hidden>지금으로 가기 →</button></div>
       </div>
       <div class="bpm glass" id="bpmBox" aria-label="지구의 심박수">
         <svg class="heart" id="heartIcon" viewBox="0 0 32 29" aria-hidden="true"><path d="M16 28.5C6 21 0 15.5 0 8.6 0 3.6 3.9 0 8.6 0c3 0 5.8 1.6 7.4 4.2C17.6 1.6 20.4 0 23.4 0 28.1 0 32 3.6 32 8.6 32 15.5 26 21 16 28.5z"/></svg>
@@ -429,6 +434,7 @@ const fHM = ms => { const k=kst(ms); return `${k.hour}:${k.minute}`; };
 const fShort = ms => { const k=kst(ms); return `${+k.month}월 ${+k.day}일 ${k.hour}:${k.minute}`; };
 const fYMD = ms => { const k=kst(ms); return `${k.year}. ${+k.month}. ${+k.day}.`; };
 const fDepth = d => d<1 ? '1 km 미만' : (d<10? d.toFixed(1) : Math.round(d))+' km';
+const agoText = ms => ms<90e3 ? '방금' : fDur(ms)+' 전';
 function fDur(ms){ const m=Math.round(ms/60000); if(m<60) return m+'분'; const h=Math.floor(m/60), r=m%60; return r? `${h}시간 ${r}분` : `${h}시간`; }
 
 /* ================= Mapping: depth → color/voice, magnitude → pitch ================= */
@@ -698,6 +704,11 @@ const Sound = {
     for(const k of [69,76,81,84]){ const o=this.osc('sine',mtof(k),t+0.6,stop), og=ctx.createGain(); og.gain.setValueAtTime(0.0001,t+0.6); og.gain.exponentialRampToValueAtTime(0.035,t+2.4); og.gain.exponentialRampToValueAtTime(0.0001,t+dur); o.connect(og); og.connect(this.revIn); og.connect(this.dry); }
     return t+dur;
   },
+  ping(t,pan){ // a new record just arrived from the live feed
+    const ctx=this.ctx; let out=this.dry;
+    if(ctx.createStereoPanner){ const pn=ctx.createStereoPanner(); pn.pan.value=clamp(pan||0,-0.9,0.9); pn.connect(this.dry); out=pn; }
+    [[1318.5,0],[1975.5,0.1]].forEach(([f,d])=>{ const tt=t+d, o=this.osc('sine',f,tt,tt+0.7), g=ctx.createGain(); this.env(g.gain,tt,0.004,0.07,tt+0.65); o.connect(g); g.connect(out); const r=ctx.createGain(); r.gain.value=0.7; g.connect(r); r.connect(this.revIn); });
+  },
   motif(e,t){
     const ctx=this.ctx, k=magStep(e.mag);
     [5,7,10].forEach((d,j)=>{
@@ -941,25 +952,25 @@ function markPlayed(i,when){ if(!quakePts) return; const a=quakePts.geometry.get
 function resetPlayed(s,uptoIdx){ if(!quakePts) return; const a=quakePts.geometry.getAttribute('aPlay'); for(let i=0;i<a.count;i++) a.array[i]= i<uptoIdx ? U.uTime.value-60 : -1; a.needsUpdate=true; }
 
 /* ---- spawners ---- */
-function spawnRipple(e,o={}){
+function spawnRipple(e,o={},mm=e.mag){
   const rip=U.uRip.value, rp=U.uRipP.value, rc=U.uRipC.value, now=U.uTime.value;
   let best=0,score=1e9;
   for(let i=0;i<RIP_N;i++){ const age=now-rip[i].w, life=rp[i].z, rem=(age<0||age>life)? -1 : rp[i].w*(1-age/life); if(rem<score){score=rem;best=i;} }
-  const m=Math.max(0,e.mag), reach=Math.min(2.2,0.05+0.035*Math.exp(0.48*m)), life=1.6+0.55*m;
+  const m=Math.max(0,mm), reach=Math.min(2.2,0.05+0.035*Math.exp(0.48*m)), life=1.6+0.55*m;
   const sp=o.speed||1, c=o.col||e.rgb;
   rip[best].set(e.vec.x,e.vec.y,e.vec.z,now); rp[best].set(reach/life*sp,(0.02+reach*0.05)*(o.thin||1),life/(o.speed?Math.sqrt(sp):1),Math.min(1.05,0.35+0.1*m)*(o.w||1)); rc[best].set(c[0],c[1],c[2]);
 }
 const _up=HAS3? new THREE.Vector3(0,1,0) : null;
-function spawnBeam(e){
+function spawnBeam(e,mm=e.mag){
   let b=pools.beams.find(x=>x.t<0); if(!b) b=pools.beams.reduce((a,c)=>c.t<a.t?c:a);
-  const m=Math.max(0,e.mag); b.t=U.uTime.value; b.life=1.3+0.5*m; b.h=0.05+0.055*m; b.w=0.0022+0.0006*m;
+  const m=Math.max(0,mm); b.t=U.uTime.value; b.life=1.3+0.5*m; b.h=0.05+0.055*m; b.w=0.0022+0.0006*m;
   b.mesh.position.copy(e.vec).multiplyScalar(1.004); b.mesh.quaternion.setFromUnitVectors(_up,e.vec);
   b.mesh.material.uniforms.uC.value.setRGB(e.rgb[0],e.rgb[1],e.rgb[2]); b.mesh.visible=true;
 }
 const _z=HAS3? new THREE.Vector3(0,0,1):null;
-function spawnRing(e){
+function spawnRing(e,mm=e.mag){
   let r=pools.rings.find(x=>x.t<0); if(!r) r=pools.rings.reduce((a,c)=>c.t<a.t?c:a);
-  const m=Math.max(0,e.mag); r.t=U.uTime.value; r.life=1.2+0.3*m; r.R=Math.min(0.3,0.04+0.04*m);
+  const m=Math.max(0,mm); r.t=U.uTime.value; r.life=1.2+0.3*m; r.R=Math.min(0.3,0.04+0.04*m);
   r.mesh.position.copy(e.vec).multiplyScalar(1.006); r.mesh.quaternion.setFromUnitVectors(_z,e.vec);
   r.mesh.material.uniforms.uC.value.setRGB(e.rgb[0],e.rgb[1],e.rgb[2]); r.mesh.visible=true;
 }
@@ -1025,11 +1036,17 @@ function layoutGlobe(){
 const SPEEDS=[[0.5,'느리게'],[1,'보통 속도'],[2,'빠르게'],[4,'아주 빠르게']];
 const Player={s:null,p:0,playing:false,speedI:store.get('speedI',1),slow:1,next:0,started:false,
   get speed(){ return SPEEDS[this.speedI][0]; },
-  load(s,{autoplay=false,keepReal=null}={}){
-    prepare(s); this.s=s; this.p=keepReal!=null? pAtReal(s,keepReal) : 0; this.next=firstIdxAfter(s,this.p); this.slow=1;
-    vq.length=0; setQuakePoints(s); resetPlayed(s,this.next);
-    if(U.uRip) for(const r of U.uRip.value) r.w=-1e4;
-    if(HAS3 && camera){ Cam.attn=[]; Cam.target=new THREE.Vector3(s.focus.x,s.focus.y,s.focus.z); Cam.hold=0; }
+  load(s,{autoplay=false,keepReal=null,soft=false}={}){
+    // keepReal: the real moment already played up to (events at or before it count as heard)
+    prepare(s); this.s=s; this.slow=1;
+    if(keepReal==null){ this.p=0; this.next=0; }
+    else { this.next=firstAfterReal(s,keepReal); this.p= keepReal>=s.tEnd ? s.r[s.r.length-1]+0.001 : pAtReal(s,keepReal); }
+    setQuakePoints(s); resetPlayed(s,this.next);
+    if(!soft){
+      vq.length=0;
+      if(U.uRip) for(const r of U.uRip.value) r.w=-1e4;
+      if(HAS3 && camera){ Cam.attn=[]; Cam.target=new THREE.Vector3(s.focus.x,s.focus.y,s.focus.z); Cam.hold=0; }
+    }
     UI.onScene(s); store.set('scene',s.key);
     if(autoplay) this.play(); else drawTimeline();
   },
@@ -1038,6 +1055,9 @@ const Player={s:null,p:0,playing:false,speedI:store.get('speedI',1),slow:1,next:
   toggle(){ this.playing? this.pause() : this.play(); },
   seek(p){ const s=this.s; this.p=clamp(p,0,s.total); this.next=firstIdxAfter(s,this.p); for(let i=vq.length-1;i>=0;i--) if(vq[i].kind==='q') vq.splice(i,1); resetPlayed(s,this.next); drawTimeline(); UI.tickClock(true); UI.hideCaption(); },
   seekEvent(e){ this.seek(Math.max(0,this.s.r[e.i]-0.6)); if(!this.playing) this.play(); },
+  // at the live edge the clock is the wall clock; otherwise it is the replayed moment
+  realNow(){ const s=this.s; return liveEdge()? Math.max(Date.now(),s.tEnd) : realAt(s,this.p); },
+  goLive(){ const s=SCENES.find(x=>x.key==='now'); if(this.s!==s) this.load(s,{keepReal:Infinity}); else this.seek(s.r[s.r.length-1]+0.001); this.play(); },
   update(dt){
     const s=this.s; if(!s) return;
     this.slow+=(1-this.slow)*Math.min(1,dt*0.55);
@@ -1050,6 +1070,8 @@ const Player={s:null,p:0,playing:false,speedI:store.get('speedI',1),slow:1,next:
     if(this.p>=s.total){ this.p=0; this.next=0; resetPlayed(s,0); UI.toast(`${s.kind==='now'?'하루':'기록'}의 처음부터 다시 들려드려요`); }
   }
 };
+function firstAfterReal(s,t){ let lo=0,hi=s.events.length; while(lo<hi){ const m=(lo+hi)>>1; if(s.events[m].t<=t) lo=m+1; else hi=m; } return lo; }
+function liveEdge(){ const s=Player.s; return !!(s && live.on && s.kind==='now' && Player.p>=s.r[s.r.length-1]); }
 function firstIdxAfter(s,p){ let lo=0,hi=s.r.length; while(lo<hi){ const m=(lo+hi)>>1; if(s.r[m]<p) lo=m+1; else hi=m; } return lo; }
 
 /* ================= Event clock & queues ================= */
@@ -1059,7 +1081,7 @@ const vq=[];
 function fireQueues(){
   const now=clockNow(); let due=null;
   for(let i=vq.length-1;i>=0;i--){ if(vq[i].at<=now){ (due||(due=[])).push(vq[i]); vq.splice(i,1); } }
-  if(due){ due.sort((a,b)=>a.at-b.at); for(const it of due){ if(it.kind==='q') onQuakeVisual(it.e,it.user); else Heart.onBeat(); } }
+  if(due){ due.sort((a,b)=>a.at-b.at); for(const it of due){ if(it.kind==='q') onQuakeVisual(it.e,it.user,it.arrival); else Heart.onBeat(); } }
 }
 const _v=HAS3? new THREE.Vector3():null;
 function spatial(e){
@@ -1068,20 +1090,20 @@ function spatial(e){
   _v.copy(e.vec).project(camera);
   return {pan:clamp(_v.x,-1,1)*0.9, far:clamp((0.15-facing)*1.6,0,1)*(U.uXray.value>0.5?0.4:1)};
 }
-function emitQuake(e,at,fromPlayback){
+function emitQuake(e,at,fromPlayback,arrival=false){
   if(Sound.live()){
-    const sp=spatial(e), ta=Sound.at(at); Sound.quake(e,ta,sp);
+    const sp=spatial(e), ta=Sound.at(at); if(arrival) Sound.ping(Math.max(Sound.ctx.currentTime,ta-0.32),sp.pan); Sound.quake(e,ta,arrival?{...sp,gain:1.25}:sp);
     if(Adopt.has(e)) Sound.motif(e,ta);
     if(e.mag>=7) Sound.duck(ta,1.2);
   }
-  vq.push({at:at+Sound.lat(),kind:'q',e,user:!fromPlayback});
+  vq.push({at:at+Sound.lat(),kind:'q',e,user:!fromPlayback,arrival});
 }
 
 /* ================= Heart ================= */
 const Heart={bpm:62,adr:0,next:0,env:0,
   update(dt){
     const s=Player.s;
-    if(s){ const tr=(!started && s.kind==='now')? s.tEnd : realAt(s,Player.p), a=activityAt(s,tr); this.target=bpmFor(a); Sound.setActivity(clamp(a/60,0,1)); }
+    if(s){ const tr=(!started && s.kind==='now')? s.tEnd : Player.realNow(), a=activityAt(s,tr); this.target=bpmFor(a); Sound.setActivity(clamp(a/60,0,1)); }
     this.adr*=Math.exp(-dt/7);
     const goal=clamp((this.target||62)+this.adr,48,178); this.bpm+=(goal-this.bpm)*Math.min(1,dt*0.9);
     const now=clockNow(); if(this.next<now-0.4) this.next=now+0.05;
@@ -1094,17 +1116,19 @@ const Heart={bpm:62,adr:0,next:0,env:0,
 
 /* ================= Visual reaction to a quake ================= */
 let lastEv=null;
-function onQuakeVisual(e,user){
+function onQuakeVisual(e,user,arrival){
   if(renderer){
-    spawnRipple(e); if(e.mag>=6) spawnRipple(e,{speed:1.75,col:[0.78,0.88,1.0],w:0.5,thin:0.6}); spawnBeam(e); if(e.mag>=Player.s.ringThr || user) spawnRing(e);
+    const mm=arrival? Math.max(e.mag,3.6) : e.mag; // even a tiny live quake gets a visible wave
+    spawnRipple(e,{},mm); if(e.mag>=6) spawnRipple(e,{speed:1.75,col:[0.78,0.88,1.0],w:0.5,thin:0.6}); spawnBeam(e,mm); if(e.mag>=Player.s.ringThr || user || arrival) spawnRing(e,mm);
     if(Player.s && Player.s.events[e.i]===e) markPlayed(e.i,U.uTime.value);
     Cam.attn.push({v:e.vec,w:Math.pow(10,0.35*Math.max(0,e.mag))*(e.hl?4:1),t:U.uTime.value});
-    if(user){ Cam.attn.push({v:e.vec,w:1e4,t:U.uTime.value}); }
+    if(user||arrival){ Cam.attn.push({v:e.vec,w:1e4,t:U.uTime.value}); }
   }
   Heart.shock(e.mag);
   SeisSynth.kick(0.25+0.11*Math.max(0,e.mag));
   UI.showNow(e); lastEv=e;
-  if(!user && e.hl) UI.caption(e);
+  if(arrival) UI.caption(e,{title:'방금 들어온 지진 · '+e.ko.main, sub:`${agoText(Date.now()-e.t)} 발생 · ${fHM(e.t)} · 깊이 ${fDepth(e.depth)}`});
+  else if(!user && e.hl) UI.caption(e);
   if(e.mag>=6.4 && (e.hl || e.mag>=7)){
     FX.flash=Math.min(1.0,0.45+(e.mag-6)*0.2); Cam.shake=Math.max(Cam.shake,0.0035*(e.mag-5.8));
     if(e.mag>=7 && !user && !RM) Player.slow=0.32;
@@ -1174,26 +1198,27 @@ function drawTimeline(){
   const w=c.clientWidth, h=c.clientHeight; if(!w||!h) return;
   if(c.width!==Math.round(w*dpr)||c.height!==Math.round(h*dpr)){ c.width=Math.round(w*dpr); c.height=Math.round(h*dpr); }
   x.setTransform(dpr,0,0,dpr,0,0); x.clearRect(0,0,w,h);
-  const t0=s.tStart, span=Math.max(1,s.tEnd-t0), X=t=>4+(t-t0)/span*(w-8);
-  const cur=realAt(s,Player.p);
+  const [t0,t1]=tlSpan(s), span=Math.max(1,t1-t0), X=t=>4+(t-t0)/span*(w-8);
+  const cur=Player.realNow();
   x.fillStyle='rgba(150,170,255,0.08)'; x.fillRect(0,h-1,w,1);
   const step = span<=36*3600e3 ? 3*3600e3 : span<=4*86400e3 ? 12*3600e3 : 86400e3;
   x.fillStyle='rgba(150,170,255,0.18)';
   const k0=Math.ceil((t0+9*3600e3)/step)*step-9*3600e3;
-  for(let t=k0;t<=s.tEnd;t+=step){ x.fillRect(Math.round(X(t)),0,1,h); }
+  for(let t=k0;t<=t1;t+=step){ x.fillRect(Math.round(X(t)),0,1,h); }
   const range=Math.max(0.5,s.magMax-s.magMin);
   for(const e of s.events){
     const px=X(e.t), hh=3+(h-8)*Math.pow(clamp((e.mag-s.magMin)/range,0,1),1.3), played=e.t<=cur;
     x.fillStyle=css(e.rgb, played?0.95:0.28); x.fillRect(px-0.8,h-1-hh,1.6,hh);
     if(e.hl){ x.fillStyle=played?'#fff':'rgba(255,255,255,0.45)'; x.beginPath(); x.arc(px,h-3-hh,2.2,0,Math.PI*2); x.fill(); }
   }
-  const px=X(clamp(cur,t0,s.tEnd));
+  const px=X(clamp(cur,t0,t1));
   x.fillStyle='rgba(255,61,110,0.25)'; x.fillRect(px-3,0,6,h);
   x.fillStyle='#ff3d6e'; x.fillRect(px-1,0,2,h);
 }
+const tlSpan = s => [s.tStart, live.on&&s.kind==='now' ? Math.max(s.tEnd,Date.now()) : s.tEnd];
 function tlSeek(clientX){
-  const s=Player.s, r=TL.cv.getBoundingClientRect(), f=clamp((clientX-r.left-4)/(r.width-8),0,1);
-  Player.seek(pAtReal(s,s.tStart+f*(s.tEnd-s.tStart)));
+  const s=Player.s, r=TL.cv.getBoundingClientRect(), f=clamp((clientX-r.left-4)/(r.width-8),0,1), [t0,t1]=tlSpan(s), t=t0+f*(t1-t0);
+  Player.seek(t>=s.tEnd ? s.r[s.r.length-1]+0.001 : pAtReal(s,t));
 }
 
 /* ================= UI ================= */
@@ -1208,6 +1233,7 @@ const UI={
     $('#muteBtn').onclick=()=>{ if(!Sound.ready){ ensureStarted(true); return; } Sound.setMuted(!Sound.muted); this.setMute(); };
     $('#menuBtn').onclick=()=>this.sheet(!$('#panel').classList.contains('open'));
     $('#sheetClose').onclick=()=>this.sheet(false);
+    $('#liveBtn').onclick=()=>{ ensureStarted(false); Player.goLive(); this.toast('지금 이 순간으로 왔어요 · 새 지진이 올라오면 바로 울려요'); };
     document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>this.tab(b.dataset.tab));
     $('#startBtn').onclick=()=>ensureStarted(true,true);
     $('#silentBtn').onclick=()=>ensureStarted(false,true);
@@ -1238,7 +1264,7 @@ const UI={
   toast(msg){ const t=$('#toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(this._toastT); this._toastT=setTimeout(()=>t.classList.remove('show'),2600); },
   _capT:0,
   hideCaption(){ clearTimeout(this._capT); $('#caption').classList.remove('show'); },
-  caption(e){ const c=$('#caption'); c.style.setProperty('--q',css(e.rgb)); $('#capMag').textContent='M '+e.mag.toFixed(1); $('#capTitle').textContent=e.hl; $('#capSub').textContent=`${fDate(e.t)} ${fHM(e.t)} · 깊이 ${fDepth(e.depth)}`; c.classList.add('show'); clearTimeout(this._capT); this._capT=setTimeout(()=>c.classList.remove('show'),e.mag>=7?5200:3800); },
+  caption(e,o={}){ const c=$('#caption'); c.style.setProperty('--q',css(e.rgb)); $('#capMag').textContent='M '+e.mag.toFixed(1); $('#capTitle').textContent=o.title||e.hl; $('#capSub').textContent=o.sub||`${fDate(e.t)} ${fHM(e.t)} · 깊이 ${fDepth(e.depth)}`; c.classList.add('show'); clearTimeout(this._capT); this._capT=setTimeout(()=>c.classList.remove('show'),e.mag>=7?5200:3800); },
   showNow(e){
     const n=$('#now'); n.style.setProperty('--q',css(e.rgb));
     $('#nowMag').textContent=e.mag.toFixed(1); $('#nowPlace').textContent=e.ko.main; $('#nowOrig').textContent=e.ko.sub||'';
@@ -1248,10 +1274,14 @@ const UI={
     $('#gaugeMark').style.top=`calc(${clamp(e.depth/700,0,1)*100}% - 1.5px)`;
   },
   tickClock(force){
-    const s=Player.s; if(!s) return; const t=realAt(s,Player.p), k=fDate(t)+fTime(t);
+    const s=Player.s; if(!s) return; const t=Player.realNow(), k=fDate(t)+fTime(t);
     if(!force && k===this.clockKey) return; this.clockKey=k;
     $('#clockDate').textContent=fDate(t); $('#clockTime').textContent=fTime(t);
-    $('#tlCount').textContent=`${Math.min(Player.next,s.events.length)} / ${s.events.length}`;
+    const edge=liveEdge(), lv=live.on&&s.kind==='now';
+    $('#tlCount').textContent= edge ? `실시간 대기 중 · ${s.events.length}건 · ${fHM(live.lastPoll)} 확인` : `${Math.min(Player.next,s.events.length)} / ${s.events.length}`;
+    $('#tlEnd').textContent= lv ? '지금' : fShort(s.tEnd);
+    $('#srcChip').classList.toggle('waiting',edge);
+    const lb=$('#liveBtn'), show=live.on && !edge; if(lb.hidden===show) lb.hidden=!show;
   },
   bpmShown:-1,
   tickBpm(){ const b=Math.round(Heart.bpm); if(b!==this.bpmShown){ this.bpmShown=b; $('#bpmNum').textContent=b; $('#bpmMood').textContent=moodOf(b); } },
@@ -1379,27 +1409,38 @@ function ensureStarted(withSound,fromGate){
 document.addEventListener('visibilitychange',()=>{ if(!Sound.ready) return; if(document.hidden) Sound.ctx.suspend(); else if(started) Sound.ctx.resume(); });
 
 /* ================= Live feed (works where the browser may reach USGS directly) ================= */
-const live={on:false};
+const live={on:false,lastPoll:0};
 async function tryLive(){
   try{
     const ctl=new AbortController(), to=setTimeout(()=>ctl.abort(),8000);
     const res=await fetch('https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.geojson',{signal:ctl.signal,cache:'no-store'}); clearTimeout(to);
     if(!res.ok) return; const j=await res.json(); if(!j||!j.features||j.features.length<5) return;
-    applyLive(j); live.on=true; UI.updateSrc(); setInterval(pollLive,60000);
+    live.on=true; applyLive(j,true); UI.updateSrc(); setInterval(pollLive,60000);
   }catch(e){ /* the page keeps the bundled USGS snapshot */ }
 }
-async function pollLive(){ try{ const r=await fetch('https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.geojson',{cache:'no-store'}); if(r.ok) applyLive(await r.json()); }catch(e){} }
-function applyLive(j){
-  const rows=j.features.filter(f=>f.properties&&f.properties.mag!=null&&f.geometry).map(f=>({t:f.properties.time,lat:f.geometry.coordinates[1],lon:f.geometry.coordinates[0],depth:f.geometry.coordinates[2],mag:f.properties.mag,id:f.id,place:f.properties.place||''})).sort((a,b)=>a.t-b.t);
+async function pollLive(){ try{ const r=await fetch('https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.geojson',{cache:'no-store'}); if(r.ok) applyLive(await r.json(),false); }catch(e){} }
+// USGS posts quakes minutes after they happen and not in time order (a 09:40 quake can appear after a 09:44 one),
+// so a refresh is diffed by id: anything new that the playhead has already passed is played right away as an arrival.
+function applyLive(j,first){
+  const rows=j.features.filter(f=>f.properties&&f.properties.mag!=null&&f.geometry&&(f.properties.type||'earthquake')==='earthquake')
+    .map(f=>({t:f.properties.time,lat:f.geometry.coordinates[1],lon:f.geometry.coordinates[0],depth:f.geometry.coordinates[2],mag:f.properties.mag,id:f.id,place:f.properties.place||''})).sort((a,b)=>a.t-b.t);
+  live.lastPoll=Date.now();
   if(rows.length<5) return;
-  const s=SCENES.find(x=>x.key==='now'); const t0=rows[0].t;
-  const sameTail = s.prepared && s.ev.length && s.ev[s.ev.length-1][5]===rows[rows.length-1].id && s.ev.length===rows.length;
-  if(sameTail) return;
-  const keep = Player.s===s ? realAt(s,Player.p) : null;
-  s.t0=t0/1000; s.ev=rows.map(r=>[(r.t-t0)/1000,r.lat,r.lon,r.depth,r.mag,r.id,r.place]); s.prepared=false;
-  if(Player.s===s){ prepare(s); const playing=Player.playing; Player.load(s,{keepReal:keep}); if(playing) Player.play(); }
-  else prepare(s);
+  const s=SCENES.find(x=>x.key==='now'), known=new Set(s.ev.map(a=>a[5]));
+  const fresh=first? [] : rows.filter(r=>!known.has(r.id)).map(r=>r.id);
+  const same = !first && !fresh.length && rows.length===s.ev.length && rows[0].id===s.ev[0][5] && rows.every((r,i)=>r.mag===s.ev[i][4]);
+  if(same){ UI.tickClock(true); return; }
+  const active=Player.s===s, edge=active&&liveEdge(), keep=active? (edge? Infinity : realAt(s,Player.p)) : null;
+  const t0=rows[0].t; s.t0=t0/1000; s.ev=rows.map(r=>[(r.t-t0)/1000,r.lat,r.lon,r.depth,r.mag,r.id,r.place]); s.prepared=false; prepare(s);
+  if(active){
+    const playing=Player.playing; Player.load(s,{keepReal:keep,soft:true}); if(playing) Player.play();
+    if(fresh.length && started && !document.hidden){
+      const ids=new Set(fresh), passed=edge? Infinity : keep;
+      s.events.filter(e=>ids.has(e.id) && e.t<=passed).slice(-6).forEach((e,k)=>emitQuake(e,clockNow()+0.45+k*1.3,true,true));
+    }
+  }
   UI.renderScenes(); if(Player.s) document.querySelectorAll('.scene').forEach(b=>b.setAttribute('aria-pressed',b.dataset.key===Player.s.key));
+  UI.tickClock(true);
 }
 
 /* ================= Main loop ================= */
@@ -1413,7 +1454,7 @@ function frame(){
     const xt=UI.xray?1:0; U.uXray.value+=(xt-U.uXray.value)*Math.min(1,dt*2.2);
     U.uBeat.value=Heart.env; FX.flash*=Math.exp(-dt*1.6); U.uFlash.value=FX.flash;
     if(!Sound.live()) U.uAudio.value*=Math.exp(-dt*4);
-    if(Player.s) U.uSun.value.copy(sunDir(realAt(Player.s,Player.p)));
+    if(Player.s) U.uSun.value.copy(sunDir(Player.realNow()));
     const xr=U.uXray.value; ocean.material.depthWrite=xr<0.02;
     core.visible=xr>0.01; core.scale.setScalar(1+Heart.env*0.12); coreGlow.visible=xr>0.01; coreGlow.material.opacity=xr*(0.28+Heart.env*0.32); coreGlow.scale.setScalar(0.7+Heart.env*0.2);
     shell.material.opacity=xr*0.16;
@@ -1422,7 +1463,7 @@ function frame(){
     updateCamera(dt); updatePools(); composer.render();
   }
   drawSeismo(dt);
-  if(Player.playing||TL.drag) drawTimeline();
+  if(Player.playing||TL.drag||live.on) drawTimeline();
   UI.tickClock(false); UI.tickBpm();
 }
 
