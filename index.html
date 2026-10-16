@@ -92,12 +92,6 @@ h3{margin:0;font:500 15px/1.3 var(--f-display);text-wrap:balance}
 .scene-list{display:flex;flex-direction:column;gap:6px}
 .scene-col{display:flex;flex-direction:column;gap:6px}
 .sc-group{margin-top:6px}
-.past-toggle{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;margin-top:6px;text-align:left;background:none;border:1px dashed var(--line-2);border-radius:11px;padding:10px 12px;color:var(--ink);font:500 13px/1.35 var(--f-body);cursor:pointer;transition:border-color .2s,background .2s}
-.past-toggle:hover{background:rgba(150,170,255,.05)}
-.past-toggle small{display:block;margin-top:2px;color:var(--ink-3);font-size:11.5px;font-weight:400}
-.past-toggle .chev{color:var(--ink-3);transition:transform .2s}
-.past-toggle[aria-expanded="true"] .chev{transform:rotate(180deg)}
-.past-box{display:flex;flex-direction:column;gap:6px}
 .era-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
 .scene{display:grid;grid-template-columns:52px minmax(0,1fr) auto;align-items:center;gap:10px;text-align:left;background:rgba(255,255,255,.02);border:1px solid var(--line);border-radius:11px;padding:9px 11px;cursor:pointer;transition:border-color .2s,background .2s}
 .scene:hover{border-color:var(--line-2);background:rgba(150,170,255,.06)}
@@ -383,6 +377,7 @@ h3{margin:0;font:500 15px/1.3 var(--f-display);text-wrap:balance}
         <p class="lede">최근 기록과 1900년 이후의 과거 기록이 있습니다. 하나를 고르면 그 기간의 지진과 쓰나미를 일어난 순서대로 소리로 들려 드립니다.</p>
         <div class="scene-detail" id="sceneDetail"></div>
         <div class="scene-list" id="sceneList"></div>
+        <p class="memo">과거 기록에는 많은 사람의 아픔이 함께 남아 있습니다. 그날을 기억하는 마음으로 들어 주십시오.</p>
       </div>
       <div class="pane" id="pane-voice" role="tabpanel" aria-labelledby="tab-voice" hidden></div>
       <div class="pane" id="pane-sound" role="tabpanel" aria-labelledby="tab-sound" hidden>
@@ -1949,7 +1944,7 @@ const UI={
     $('#tlStart').textContent=fTL(s,s.tFirst); $('#tlEnd').textContent=fTL(s,s.tLast);
     this.updateSrc();
     document.querySelectorAll('.scene').forEach(b=>b.setAttribute('aria-pressed',b.dataset.key===s.key));
-    this.renderDetail(s); this.renderScale(); this.tickClock(true); if(isPast(s)) this.setPast(true);
+    this.renderDetail(s); this.renderScale(); this.tickClock(true);
     const n=s.events.length, nts=s.tsAll.length, g=$('#gateLede'), gb=$('#gateBpm');
     if(g) g.textContent= s.kind==='now' ? `지난 24시간 동안 전 세계에서 지진이 ${n}번 기록되었습니다. 지진 하나하나를 음으로 바꿔 지구의 심장 소리로 들려 드립니다.`
       : s.kind==='week' ? `최근 7일 동안 기록된 규모 4.5 이상 지진 ${n}건을 음으로 바꿔 들려 드립니다.`
@@ -1962,20 +1957,14 @@ const UI={
     chip.classList.toggle('live',live.on&&s.kind==='now');
     $('#srcText').textContent = (s.kind==='past'||s.kind==='era') ? (nts? 'USGS 카탈로그 · NOAA 쓰나미' : 'USGS 지진 카탈로그') : live.on&&s.kind==='now' ? '실시간 · USGS 피드' : `USGS 기록 · ${fShort(Date.parse(DATA.fetchedAt))} 기준`;
   },
-  pastOpen:false,
   renderScenes(){
     const box=$('#sceneList'); box.innerHTML='';
     const groups=[['지금 · 최근 기록',s=>s.kind==='now'||s.kind==='week'],['과거 · 큰 지진 전후',s=>s.kind==='past'],['과거 · 1900년 이후 10년씩 · 규모 7 이상 지진과 쓰나미',s=>s.kind==='era']];
-    const tog=document.createElement('button'), past=document.createElement('div'), memo=document.createElement('p');
-    tog.className='past-toggle'; tog.setAttribute('aria-controls','pastBox'); tog.setAttribute('aria-expanded',String(this.pastOpen));
-    tog.innerHTML=`<span>과거 기록 보기<small>큰 지진 ${SCENES.filter(s=>s.kind==='past').length}개 · 1900년 이후 ${SCENES.filter(s=>s.kind==='era').length}개 연대</small></span><span class="chev" aria-hidden="true">▾</span>`;
-    tog.onclick=()=>this.setPast(!this.pastOpen);
-    past.className='past-box'; past.id='pastBox'; past.hidden=!this.pastOpen;
-    memo.className='memo'; memo.textContent='과거 기록에는 많은 사람의 아픔이 함께 남아 있습니다. 그날을 기억하는 마음으로 들어 주십시오.';
     for(const [label,f] of groups){
       const list=SCENES.filter(f); if(!list.length) continue;
       const era=list[0].kind==='era', h=document.createElement('div'), wrap=document.createElement('div');
-      h.className='eyebrow sc-group'; h.textContent=label; wrap.className=era? 'era-grid' : 'scene-col'; (isPast(list[0])? past : box).append(h,wrap);
+      if(era) list.reverse(); // newest decade first, like the big quakes above
+      h.className='eyebrow sc-group'; h.textContent=label; wrap.className=era? 'era-grid' : 'scene-col'; box.append(h,wrap);
       for(const s of list){
         const mx=Math.max(...s.ev.map(a=>a[4])), nts=(s.ts||[]).length, tsTxt=s.tsMissing? '쓰나미 기록 없음' : `쓰나미 ${nts}건`;
         const b=document.createElement('button'); b.className='scene'+(era?' era':''); b.dataset.key=s.key; b.setAttribute('aria-pressed','false');
@@ -1985,9 +1974,7 @@ const UI={
         wrap.appendChild(b);
       }
     }
-    past.append(memo); box.append(tog,past);
   },
-  setPast(open){ this.pastOpen=open; const t=document.querySelector('.past-toggle'), b=$('#pastBox'); if(t) t.setAttribute('aria-expanded',String(open)); if(b) b.hidden=!open; },
   renderDetail(s){
     const box=$('#sceneDetail'), era=s.kind==='era', nts=s.tsAll.length;
     box.innerHTML=`<h3>${s.title}${s.date?` · ${s.date}`:''}</h3><p>${era? eraBlurb(s) : s.blurb}</p><span class="filter">${s.filter} · 지진 ${s.events.length}건 · 규모 ${s.magMin.toFixed(1)}–${s.magMax.toFixed(1)}${nts? ` · 쓰나미 ${nts}건` : ''}</span>`;
