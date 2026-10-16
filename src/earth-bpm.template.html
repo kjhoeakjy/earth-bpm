@@ -366,7 +366,7 @@ h3{margin:0;font:500 15px/1.3 var(--f-display);text-wrap:balance}
         <button role="tab" id="tab-sound" aria-controls="pane-sound" aria-selected="false" data-tab="sound">소리 규칙</button>
       </nav>
       <div class="pane" id="pane-time" role="tabpanel" aria-labelledby="tab-time">
-        <p class="lede">최근 기록과 1900년 이후의 과거 기록이 있습니다. 하나를 고르면 그 기간의 지진과 쓰나미를 일어난 순서대로 소리로 들려 드립니다.</p>
+        <p class="lede">최근 기록과 1900년 이후의 과거 기록이 있습니다. 하나를 고르면 그 기간의 지진과 쓰나미를 일어난 순서대로 연주합니다.</p>
         <div class="scene-detail" id="sceneDetail"></div>
         <div class="scene-list" id="sceneList"></div>
         <p class="memo">과거 기록에는 많은 사람의 아픔이 함께 남아 있습니다. 그날을 기억하는 마음으로 들어 주십시오.</p>
@@ -436,7 +436,7 @@ h3{margin:0;font:500 15px/1.3 var(--f-display);text-wrap:balance}
       <div class="gate-eyebrow">USGS 지진 · NOAA 쓰나미 · 3D 지구 · 입체 음향</div>
       <h1 id="gateTitle">Earth <b>Yonju</b></h1>
       <svg class="gate-ecg" viewBox="0 0 520 48" aria-hidden="true"><path class="base" pathLength="1" d="M0 30H150l8-5 8 5h20l5 4 9-30 9 38 6-12h22q14-11 28 0h36l8-5 8 5h20l5 4 9-30 9 38 6-12h22q14-11 28 0h66"/><path class="run" pathLength="1" d="M0 30H150l8-5 8 5h20l5 4 9-30 9 38 6-12h22q14-11 28 0h36l8-5 8 5h20l5 4 9-30 9 38 6-12h22q14-11 28 0h66"/></svg>
-      <p id="gateLede">지난 24시간 동안 일어난 지진을 음으로 바꿔 지구의 심장 소리로 들려 드립니다.</p>
+      <p id="gateLede">지난 24시간 동안 일어난 지진을 하나하나 음으로 바꿔 지구의 연주로 들려 드립니다.</p>
       <p class="now-bpm" id="gateBpm"></p>
       <p class="gate-voice" id="gateVoice"></p>
       <p class="gate-ear"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 15.5V12a8 8 0 0 1 16 0v3.5"/><rect x="3" y="14" width="4.6" height="7" rx="1.7"/><rect x="16.4" y="14" width="4.6" height="7" rx="1.7"/></svg><span><b>이어폰이나 헤드폰을 끼고 들으시기를 권합니다</b>화면 왼쪽의 지진은 왼쪽 귀에, 오른쪽의 지진은 오른쪽 귀에 들립니다. 스피커로는 잘 들리지 않는 큰 지진의 낮은 울림도 들을 수 있습니다.</span></p>
@@ -853,7 +853,7 @@ function quakeName(e){
 }
 function eraBlurb(s){
   const max=s.maxEv, nts=s.tsAll.length;
-  return `${s.date}에 전 세계에서 일어난 규모 7 이상 지진 ${s.events.length}건${s.tsMissing? '' : `과 NOAA에 기록된 쓰나미 ${nts}건`}을 시간 순서대로 들려 드립니다. `
+  return `${s.date}에 전 세계에서 일어난 규모 7 이상 지진 ${s.events.length}건${s.tsMissing? '' : `과 NOAA에 기록된 쓰나미 ${nts}건`}을 시간 순서대로 연주합니다. `
     +`가장 큰 지진은 규모 ${max.mag.toFixed(1)}의 ${quakeName(max).replace(/ \(.+\)$/,'')}입니다.`+(s.tsMissing? ' 이 연대의 쓰나미 기록은 아직 넣지 못했습니다.' : '');
 }
 function idxAtOrBefore(s,t){ let lo=0,hi=s.events.length-1,ans=-1; while(lo<=hi){ const m=(lo+hi)>>1; if(s.events[m].t<=t){ans=m;lo=m+1;} else hi=m-1; } return ans; }
@@ -1938,10 +1938,10 @@ const UI={
     document.querySelectorAll('.scene').forEach(b=>b.setAttribute('aria-pressed',b.dataset.key===s.key));
     this.renderDetail(s); this.renderScale(); this.tickClock(true);
     const n=s.events.length, nts=s.tsAll.length, g=$('#gateLede'), gb=$('#gateBpm');
-    if(g) g.textContent= s.kind==='now' ? `지난 24시간 동안 전 세계에서 지진이 ${n}번 기록되었습니다. 지진 하나하나를 음으로 바꿔 지구의 심장 소리로 들려 드립니다.`
-      : s.kind==='week' ? `최근 7일 동안 기록된 규모 4.5 이상 지진 ${n}건을 음으로 바꿔 들려 드립니다.`
-      : s.kind==='era' ? `${s.date}에 일어난 규모 7 이상 지진 ${n}건${nts? `과 쓰나미 ${nts}건` : ''}을 시간 순서대로 들려 드립니다.`
-      : `${s.date} ${s.title} 전후의 지진 ${n}건${nts? `과 쓰나미 ${nts}건` : ''}을 시간 순서대로 들려 드립니다.`;
+    if(g) g.textContent= s.kind==='now' ? `지난 24시간 동안 전 세계에서 지진이 ${n}번 기록되었습니다. 지진 하나하나를 음으로 바꿔 지구의 연주로 들려 드립니다.`
+      : s.kind==='week' ? `최근 7일 동안 기록된 규모 4.5 이상 지진 ${n}건을 음으로 바꿔 연주합니다.`
+      : s.kind==='era' ? `${s.date}에 일어난 규모 7 이상 지진 ${n}건${nts? `과 쓰나미 ${nts}건` : ''}을 시간 순서대로 연주합니다.`
+      : `${s.date} ${s.title} 전후의 지진 ${n}건${nts? `과 쓰나미 ${nts}건` : ''}을 시간 순서대로 연주합니다.`;
     if(gb){ gb.hidden=s.kind!=='now'; if(s.kind==='now') gb.innerHTML=`최근 한 시간의 지진 활동으로 계산한 지구의 심박은 <b>${Math.round(bpmFor(activityAt(s,s.tEnd)))} BPM</b>입니다.`; }
   },
   updateSrc(){

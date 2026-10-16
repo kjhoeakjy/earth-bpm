@@ -381,7 +381,7 @@ def standalone(html):
     return ('<!doctype html>\n<html lang="ko">\n<head>\n<meta charset="utf-8">\n'
             '<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">\n'
             '<meta name="theme-color" content="#03040a">\n'
-            '<meta name="description" content="최근 24시간과 1900년 이후의 USGS 지진 기록, NOAA 쓰나미 기록을 3D 지구와 소리로 듣는 지구 연주(Earth Yonju)">\n'
+            '<meta name="description" content="지구 연주(Earth Yonju) · 최근 24시간과 1900년 이후의 USGS 지진 기록과 NOAA 쓰나미 기록을 3D 지구 위에서 연주합니다">\n'
             f'{head}\n</head>\n<body>\n{body}\n</body>\n</html>\n')
 
 
