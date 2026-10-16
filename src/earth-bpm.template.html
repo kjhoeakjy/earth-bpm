@@ -178,9 +178,9 @@ h3{margin:0;font:500 15px/1.3 var(--f-display);text-wrap:balance}
 .only-mobile{display:none}
 
 /* ---------- overlays ---------- */
-#gate{position:absolute;inset:0;z-index:10;display:grid;place-items:center;padding-block:24px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));background:radial-gradient(ellipse at 50% 45%,rgba(3,4,10,.15),rgba(3,4,10,.78) 75%);transition:opacity .9s ease}
+#gate{position:absolute;inset:0;z-index:10;display:grid;justify-items:center;overflow-y:auto;padding-block:24px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));background:radial-gradient(ellipse at 50% 45%,rgba(3,4,10,.15),rgba(3,4,10,.78) 75%);transition:opacity .9s ease}
 #gate.out{opacity:0;pointer-events:none}
-.gate-card{max-width:560px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:14px}
+.gate-card{max-width:560px;margin-block:auto;text-align:center;word-break:keep-all;display:flex;flex-direction:column;align-items:center;gap:14px}
 .gate-eyebrow{font:500 11px/1 var(--f-mono);letter-spacing:.18em;text-transform:uppercase;color:var(--ink-2);line-height:1.5;text-wrap:balance}
 .gate-card h1{margin:0;font:300 clamp(48px,9vw,84px)/1 var(--f-display);letter-spacing:-.02em;text-shadow:0 4px 40px rgba(0,0,0,.8)}
 .gate-card h1 b{font:600 .62em/1 var(--f-mono);color:var(--heart);letter-spacing:.06em;margin-left:.15em;text-shadow:0 0 30px rgba(255,61,110,.6)}
@@ -192,6 +192,9 @@ h3{margin:0;font:500 15px/1.3 var(--f-display);text-wrap:balance}
 .primary svg{width:18px;height:17px;fill:currentColor}
 .ghost{border:1px solid var(--line-2);border-radius:999px;padding:13px 22px;background:rgba(10,14,30,.5);color:var(--ink);font-size:15px;cursor:pointer}
 .gate-hint{font-size:12.5px!important;color:var(--ink-3)!important}
+.gate-card .gate-ear{display:flex;align-items:center;gap:13px;max-width:min(440px,100%);box-sizing:border-box;text-align:left;padding:11px 16px 11px 14px;border:1px solid rgba(110,255,230,.26);border-radius:14px;background:rgba(6,12,26,.66);color:var(--ink-2);font-size:12.5px;line-height:1.55;text-wrap:pretty;text-shadow:none}
+.gate-ear svg{flex:none;width:28px;height:28px;fill:none;stroke:var(--lcd);stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 0 6px rgba(110,255,230,.45))}
+.gate-ear b{display:block;margin-bottom:2px;color:var(--ink);font-size:14px;font-weight:600}
 
 #caption{position:absolute;left:50%;top:22%;transform:translate(-50%,10px);z-index:5;text-align:center;pointer-events:none;opacity:0;padding:18px 28px 22px;background:radial-gradient(ellipse at 50% 50%,rgba(3,4,10,.6),rgba(3,4,10,.3) 50%,rgba(3,4,10,0) 72%);transition:opacity .6s ease,transform .8s cubic-bezier(.2,.8,.2,1);width:min(92vw,720px)}
 #caption.show{opacity:1;transform:translate(-50%,0)}
@@ -265,6 +268,8 @@ h3{margin:0;font:500 15px/1.3 var(--f-display);text-wrap:balance}
 /* ---------- great quakes: the whole console shakes ---------- */
 #hud.shake{animation:hudShake var(--dur,1.2s) linear both}
 #hud.gated #now{opacity:0} /* the start screen sits on top; keep the card text from showing through it */
+#hud{transition:opacity .9s ease}
+@media (max-width:979px),(max-height:880px){#hud.gated{opacity:0}} /* phones and short screens: the start card would run into the top bar and the deck */
 @keyframes hudShake{
   0%{transform:none}
   4%{transform:translate(calc(var(--amp)*-1),calc(var(--amp)*.6))}
@@ -336,7 +341,7 @@ h3{margin:0;font:500 15px/1.3 var(--f-display);text-wrap:balance}
   #tag .box b{font-size:15px}
 }
 @media (max-width:420px){.chips .pill.scene-pill{max-width:62vw;overflow:hidden;text-overflow:ellipsis}}
-@media (prefers-reduced-motion:reduce){#gate,#caption,#toast,#panel,.cap-line{transition:none}#hud.shake,#caption.great .cap-mag,.pill.live.waiting .dot,.gate-ecg .run,.lcd.loading #lcdSub,.lcd.loading #lcdBigSub,#tag.pop .brk,#tag.pop .box,.now-meta .tsu-line.pulse{animation:none}}
+@media (prefers-reduced-motion:reduce){#gate,#hud,#caption,#toast,#panel,.cap-line{transition:none}#hud.shake,#caption.great .cap-mag,.pill.live.waiting .dot,.gate-ecg .run,.lcd.loading #lcdSub,.lcd.loading #lcdBigSub,#tag.pop .brk,#tag.pop .box,.now-meta .tsu-line.pulse{animation:none}}
 </style>
 
 <div id="app">
@@ -439,11 +444,12 @@ h3{margin:0;font:500 15px/1.3 var(--f-display);text-wrap:balance}
       <p id="gateLede">지난 24시간 동안 일어난 지진을 음으로 바꿔 지구의 심장 소리로 들려 드립니다.</p>
       <p class="now-bpm" id="gateBpm"></p>
       <p class="gate-voice" id="gateVoice"></p>
+      <p class="gate-ear"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 15.5V12a8 8 0 0 1 16 0v3.5"/><rect x="3" y="14" width="4.6" height="7" rx="1.7"/><rect x="16.4" y="14" width="4.6" height="7" rx="1.7"/></svg><span><b>이어폰이나 헤드폰을 끼고 들으시기를 권합니다</b>화면 왼쪽의 지진은 왼쪽 귀에, 오른쪽의 지진은 오른쪽 귀에 들립니다. 스피커로는 잘 들리지 않는 큰 지진의 낮은 울림도 들을 수 있습니다.</span></p>
       <div class="gate-actions">
         <button id="startBtn" class="primary"><svg viewBox="0 0 32 29" aria-hidden="true"><path d="M16 28.5C6 21 0 15.5 0 8.6 0 3.6 3.9 0 8.6 0c3 0 5.8 1.6 7.4 4.2C17.6 1.6 20.4 0 23.4 0 28.1 0 32 3.6 32 8.6 32 15.5 26 21 16 28.5z"/></svg>소리 켜고 시작</button>
         <button id="silentBtn" class="ghost">소리 없이 보기</button>
       </div>
-      <p class="gate-hint">이어폰을 끼면 지진이 일어난 쪽에서 소리가 들립니다. 큰 지진은 낮은 음으로, 깊은 지진은 길고 부드러운 소리로 울립니다.</p>
+      <p class="gate-hint">큰 지진은 낮은 음으로, 깊은 지진은 길고 부드러운 소리로 울립니다.</p>
     </div>
   </div>
 </div>
