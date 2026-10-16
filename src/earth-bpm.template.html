@@ -12,7 +12,7 @@
   --glass:rgba(9,12,26,.68); --glass-hi:rgba(22,28,52,.78);
   --line:rgba(150,170,255,.13); --line-2:rgba(150,170,255,.28);
   --heart:#ff3d6e; --heart-ink:#1a0309; --gold:#ffd27a; --abyss:#47e5ff;
-  --q:#ffb15e;
+  --q:#ffb15e; --tsu:#46f0d6; --tsu-dim:rgba(70,240,214,.66);
   --f-display:'Hahmlet','Noto Serif KR','AppleMyungjo',serif;
   --f-body:'IBM Plex Sans KR','Apple SD Gothic Neo','Malgun Gothic',system-ui,sans-serif;
   --f-mono:'IBM Plex Mono',ui-monospace,'SFMono-Regular',Menlo,Consolas,monospace;
@@ -27,7 +27,6 @@ button{font:inherit;color:inherit}
 button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid var(--abyss);outline-offset:2px}
 #app{position:relative;height:100%;overflow:hidden;isolation:isolate}
 #gl{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:grab}
-#gl.picking{cursor:crosshair}
 #gl:active{cursor:grabbing}
 
 /* ---------- HUD grid ---------- */
@@ -55,8 +54,8 @@ button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid var(-
 button.pill{cursor:pointer}
 .pill.live-go{color:#d9ffe9;border-color:rgba(93,255,157,.45);background:rgba(18,58,40,.55)}
 .pill.live-go:hover{background:rgba(26,84,57,.7)}
-.pill.scene{color:var(--ink)}
-.pill.scene b{font-family:var(--f-mono);font-weight:600;color:var(--gold)}
+.pill.scene-pill{color:var(--ink)}
+.pill.scene-pill b{font-family:var(--f-mono);font-weight:600;color:var(--gold)}
 
 .bpm{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;column-gap:12px;padding:10px 16px 10px 14px;min-width:240px;box-sizing:border-box}
 #ecg{grid-column:1/-1;display:block;width:0;min-width:100%;height:34px;margin-top:8px}
@@ -72,7 +71,7 @@ button.pill{cursor:pointer}
 /* ---------- panel ---------- */
 #panel{grid-column:2;grid-row:2;align-self:start;max-height:100%;min-height:0;display:flex;flex-direction:column;overflow:hidden}
 .sheet-head{display:none}
-.tabs{display:grid;grid-template-columns:repeat(5,1fr);gap:2px;padding:6px;border-bottom:1px solid var(--line)}
+.tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:2px;padding:6px;border-bottom:1px solid var(--line)}
 .tabs button{background:none;border:0;padding:9px 4px;border-radius:9px;font-size:12.5px;color:var(--ink-2);cursor:pointer;white-space:nowrap}
 .tabs button[aria-selected="true"]{background:rgba(150,170,255,.12);color:var(--ink)}
 .tabs button:hover{color:var(--ink)}
@@ -84,6 +83,9 @@ h3{margin:0;font:500 15px/1.3 var(--f-display);text-wrap:balance}
 .eyebrow{font:500 10.5px/1 var(--f-mono);letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3)}
 
 .scene-list{display:flex;flex-direction:column;gap:6px}
+.scene-col{display:flex;flex-direction:column;gap:6px}
+.sc-group{margin-top:6px}
+.era-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
 .scene{display:grid;grid-template-columns:52px minmax(0,1fr) auto;align-items:center;gap:10px;text-align:left;background:rgba(255,255,255,.02);border:1px solid var(--line);border-radius:11px;padding:9px 11px;cursor:pointer;transition:border-color .2s,background .2s}
 .scene:hover{border-color:var(--line-2);background:rgba(150,170,255,.06)}
 .scene[aria-pressed="true"]{border-color:rgba(255,61,110,.55);background:rgba(255,61,110,.08)}
@@ -92,19 +94,21 @@ h3{margin:0;font:500 15px/1.3 var(--f-display);text-wrap:balance}
 .sc-title{font:500 14px/1.3 var(--f-display);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .sc-meta{font-size:11.5px;color:var(--ink-3)}
 .sc-mag{font:600 13px/1 var(--f-mono);color:var(--ink-2)}
+.scene.era{display:flex;flex-direction:column;align-items:flex-start;gap:4px;padding:8px 9px;min-width:0}
+.era-y{font:600 15px/1 var(--f-mono);color:var(--gold);letter-spacing:.02em}
+.era-m{font:500 11px/1.2 var(--f-mono);color:var(--ink-2);white-space:nowrap}
+.era-t{font-size:11px;line-height:1.2;color:var(--tsu-dim);white-space:nowrap}
+.era-t.none{color:var(--ink-3)}
 .scene-detail{border-left:2px solid var(--heart);padding:2px 0 2px 12px;display:flex;flex-direction:column;gap:4px}
 .scene-detail p{margin:0;font-size:13px;color:var(--ink-2)}
 .scene-detail .filter{font:500 11.5px/1.4 var(--f-mono);color:var(--ink-3)}
-
-.diary{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px}
-.diary li{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 10px;align-items:center;padding:9px 0;border-bottom:1px solid var(--line)}
-.diary li:last-child{border-bottom:0}
-.diary .k{font-size:11.5px;color:var(--ink-3);grid-column:1}
-.diary .v{grid-column:1;font-size:13.5px;line-height:1.45}
-.diary .v b{font-family:var(--f-mono);font-weight:600}
-.diary .go{grid-column:2;grid-row:1/span 2}
-.headline{font:500 18px/1.4 var(--f-display);margin:0;text-wrap:balance}
-.headline b{font-family:var(--f-mono);color:var(--heart);font-weight:600}
+.scene-detail .eyebrow{margin-top:8px}
+.top-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.top-list li{display:grid;grid-template-columns:58px minmax(0,1fr) auto;gap:8px;align-items:center;padding:6px 0;border-top:1px solid var(--line)}
+.top-list b{font:600 13px/1.2 var(--f-mono);color:var(--gold)}
+.top-list b.t{color:var(--tsu)}
+.top-list .tl-name{display:flex;flex-direction:column;min-width:0;font-size:12.5px;line-height:1.35;color:var(--ink)}
+.top-list small{font-size:11px;color:var(--ink-3)}
 
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--line-2);background:rgba(150,170,255,.06);border-radius:999px;padding:7px 12px;font-size:12.5px;cursor:pointer;white-space:nowrap;transition:background .2s,border-color .2s}
 .btn:hover{background:rgba(150,170,255,.14)}
@@ -112,18 +116,6 @@ h3{margin:0;font:500 15px/1.3 var(--f-display);text-wrap:balance}
 .btn.heart{background:var(--heart);border-color:var(--heart);color:var(--heart-ink);font-weight:600}
 .btn.heart:hover{background:#ff6187}
 
-.regions{display:flex;flex-wrap:wrap;gap:6px}
-.regions .btn{font-size:12px;padding:6px 10px}
-.pet{display:grid;grid-template-columns:54px minmax(0,1fr);gap:12px;align-items:center}
-.pet-face{width:54px;height:54px;border-radius:50%;display:grid;place-items:center;background:radial-gradient(circle at 50% 40%,rgba(255,61,110,.35),rgba(255,61,110,.05) 70%);border:1px solid rgba(255,61,110,.4)}
-.pet-face svg{width:28px;height:26px;fill:var(--heart)}
-.pet input{width:100%;box-sizing:border-box;background:transparent;border:0;border-bottom:1px dashed var(--line-2);color:var(--ink);font:500 18px/1.3 var(--f-display);padding:2px 0}
-.pet .where{font-size:12px;color:var(--ink-3)}
-.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
-.stat{border:1px solid var(--line);border-radius:10px;padding:8px 10px}
-.stat b{display:block;font:600 18px/1.2 var(--f-mono);font-variant-numeric:tabular-nums}
-.stat span{font-size:11px;color:var(--ink-3)}
-.persona{margin:0;font-size:13.5px;color:var(--ink);background:rgba(255,61,110,.07);border-radius:10px;padding:10px 12px}
 .row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 
 .voice-list{display:flex;flex-direction:column;gap:8px}
@@ -155,6 +147,12 @@ h3{margin:0;font:500 15px/1.3 var(--f-display);text-wrap:balance}
 .now-meta a{color:var(--ink-2);text-decoration:none;border-bottom:1px solid var(--line-2)}
 .now-meta a:hover{color:var(--ink)}
 .gauge{position:relative;border-radius:5px;background:linear-gradient(180deg,#ffdb85,#ff9a3d 8%,#ff4f5e 20%,#e04bd0 38%,#8f6bff 58%,#4f8dff 78%,#47e5ff);opacity:.85}
+#nowMag small{font-size:15px;font-weight:500;margin-left:3px}
+#now.tsu .gauge{opacity:.22}
+#now.tsu #gaugeMark{display:none}
+.now-meta .tsu-line{color:var(--tsu);text-shadow:0 0 10px rgba(70,240,214,.35)}
+.now-meta .tsu-line.pulse{animation:tsuPulse 1.8s ease-out}
+@keyframes tsuPulse{0%{text-shadow:0 0 16px var(--tsu),0 0 30px var(--tsu)}100%{text-shadow:0 0 10px rgba(70,240,214,.35)}}
 .gauge i{position:absolute;left:-4px;right:-4px;height:3px;border-radius:2px;background:#fff;box-shadow:0 0 8px #fff;top:0;transition:top .5s cubic-bezier(.2,.8,.2,1)}
 
 /* ---------- deck ---------- */
@@ -177,7 +175,7 @@ h3{margin:0;font:500 15px/1.3 var(--f-display);text-wrap:balance}
 #gate{position:absolute;inset:0;z-index:10;display:grid;place-items:center;padding-block:24px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));background:radial-gradient(ellipse at 50% 45%,rgba(3,4,10,.15),rgba(3,4,10,.78) 75%);transition:opacity .9s ease}
 #gate.out{opacity:0;pointer-events:none}
 .gate-card{max-width:560px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:14px}
-.gate-eyebrow{font:500 11px/1 var(--f-mono);letter-spacing:.18em;text-transform:uppercase;color:var(--ink-2)}
+.gate-eyebrow{font:500 11px/1 var(--f-mono);letter-spacing:.18em;text-transform:uppercase;color:var(--ink-2);line-height:1.5;text-wrap:balance}
 .gate-card h1{margin:0;font:300 clamp(48px,9vw,84px)/1 var(--f-display);letter-spacing:-.02em;text-shadow:0 4px 40px rgba(0,0,0,.8)}
 .gate-card h1 b{font:600 .62em/1 var(--f-mono);color:var(--heart);letter-spacing:.06em;margin-left:.15em;text-shadow:0 0 30px rgba(255,61,110,.6)}
 .gate-card p{margin:0;color:var(--ink-2);font-size:15px;max-width:44ch;text-wrap:balance;text-shadow:0 1px 12px rgba(0,0,0,.9)}
@@ -196,7 +194,6 @@ h3{margin:0;font:500 15px/1.3 var(--f-display);text-wrap:balance}
 .cap-sub{font:13px var(--f-mono);color:var(--ink-2);margin-top:6px;text-shadow:0 1px 10px rgba(0,0,0,.9)}
 #toast{position:absolute;left:50%;top:max(84px,calc(env(safe-area-inset-top,0px) + 84px));transform:translate(-50%,-8px);z-index:6;opacity:0;transition:opacity .35s,transform .35s;pointer-events:none;background:rgba(40,8,20,.82);border:1px solid rgba(255,61,110,.55);color:#ffe3ea;border-radius:999px;padding:8px 16px;font-size:13px;white-space:nowrap;max-width:92vw;overflow:hidden;text-overflow:ellipsis;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
 #toast.show{opacity:1;transform:translate(-50%,0)}
-#pickHint{position:absolute;left:50%;bottom:30%;transform:translateX(-50%);z-index:6;pointer-events:none}
 .nogl{position:absolute;inset:0;display:grid;place-items:center;color:var(--ink-3);font-size:13px;padding:24px;text-align:center}
 
 
@@ -261,6 +258,7 @@ h3{margin:0;font:500 15px/1.3 var(--f-display);text-wrap:balance}
 
 /* ---------- great quakes: the whole console shakes ---------- */
 #hud.shake{animation:hudShake var(--dur,1.2s) linear both}
+#hud.gated #now{opacity:0} /* the start screen sits on top; keep the card text from showing through it */
 @keyframes hudShake{
   0%{transform:none}
   4%{transform:translate(calc(var(--amp)*-1),calc(var(--amp)*.6))}
@@ -331,71 +329,74 @@ h3{margin:0;font:500 15px/1.3 var(--f-display);text-wrap:balance}
   #tag .box{font-size:11px;padding:4px 8px}
   #tag .box b{font-size:15px}
 }
-@media (max-width:420px){.chips .pill.scene{max-width:62vw;overflow:hidden;text-overflow:ellipsis}}
-@media (prefers-reduced-motion:reduce){#gate,#caption,#toast,#panel,.cap-line{transition:none}#hud.shake,#caption.great .cap-mag,.pill.live.waiting .dot,.gate-ecg .run,.lcd.loading #lcdSub,.lcd.loading #lcdBigSub,#tag.pop .brk,#tag.pop .box{animation:none}}
+@media (max-width:420px){.chips .pill.scene-pill{max-width:62vw;overflow:hidden;text-overflow:ellipsis}}
+@media (prefers-reduced-motion:reduce){#gate,#caption,#toast,#panel,.cap-line{transition:none}#hud.shake,#caption.great .cap-mag,.pill.live.waiting .dot,.gate-ecg .run,.lcd.loading #lcdSub,.lcd.loading #lcdBigSub,#tag.pop .brk,#tag.pop .box,.now-meta .tsu-line.pulse{animation:none}}
 </style>
 
 <div id="app">
-  <canvas id="gl" aria-label="실제 지진 위치가 표시된 3D 지구. 끌어서 돌리고, 지진 점을 누르면 그 소리를 들을 수 있어요."></canvas>
+  <canvas id="gl" aria-label="실제 지진과 쓰나미 위치가 표시된 3D 지구입니다. 끌어서 돌릴 수 있고, 점을 누르면 그 소리를 들을 수 있습니다."></canvas>
 
   <div id="tag" aria-hidden="true"><span class="brk"><i></i><i></i><i></i><i></i></span><span class="lead"></span><span class="box"><b id="tagMag"></b><span id="tagTxt"></span></span></div>
 
-  <div id="hud">
+  <div id="hud" class="gated">
     <div id="topbar">
       <div class="brand">
         <div class="logo">Earth <b>BPM</b></div>
         <div class="clock"><span id="clockDate">–</span><span id="clockTime">--:--:--</span><span class="kst">KST</span></div>
-        <div class="chips"><span class="pill scene" id="sceneTag"><b>NOW</b> 지금 이 순간</span><span class="pill" id="srcChip"><span class="dot"></span><span id="srcText">USGS 기록</span></span><button class="pill live-go" id="liveBtn" hidden>지금으로 가기 →</button></div>
+        <div class="chips"><span class="pill scene-pill" id="sceneTag"><b>NOW</b> 최근 24시간</span><span class="pill" id="srcChip"><span class="dot"></span><span id="srcText">USGS 기록</span></span><button class="pill live-go" id="liveBtn" hidden>지금으로 가기 →</button></div>
       </div>
       <div class="bpm glass" id="bpmBox" aria-label="지구의 심박수">
         <svg class="heart" id="heartIcon" viewBox="0 0 32 29" aria-hidden="true"><path d="M16 28.5C6 21 0 15.5 0 8.6 0 3.6 3.9 0 8.6 0c3 0 5.8 1.6 7.4 4.2C17.6 1.6 20.4 0 23.4 0 28.1 0 32 3.6 32 8.6 32 15.5 26 21 16 28.5z"/></svg>
         <div class="bpm-num"><span id="bpmNum">--</span><small>BPM</small></div>
         <canvas id="ecg" aria-hidden="true"></canvas>
-        <div class="bpm-sub"><span>지구의 맥박</span><b id="bpmMood">평온해요</b></div>
+        <div class="bpm-sub"><span>지진 활동</span><b id="bpmMood">평상시</b></div>
       </div>
     </div>
 
     <aside id="panel" class="glass" aria-label="Earth BPM 메뉴">
       <div class="sheet-head"><span>EARTH BPM</span><button id="sheetClose" aria-label="메뉴 닫기">✕</button></div>
       <nav class="tabs" role="tablist">
-        <button role="tab" id="tab-time" aria-controls="pane-time" aria-selected="true" data-tab="time">시간 여행</button>
+        <button role="tab" id="tab-time" aria-controls="pane-time" aria-selected="true" data-tab="time">기록</button>
         <button role="tab" id="tab-voice" aria-controls="pane-voice" aria-selected="false" data-tab="voice">악기</button>
-        <button role="tab" id="tab-adopt" aria-controls="pane-adopt" aria-selected="false" data-tab="adopt">내 지진대</button>
-        <button role="tab" id="tab-diary" aria-controls="pane-diary" aria-selected="false" data-tab="diary">지구 일기</button>
-        <button role="tab" id="tab-sound" aria-controls="pane-sound" aria-selected="false" data-tab="sound">소리 지도</button>
+        <button role="tab" id="tab-sound" aria-controls="pane-sound" aria-selected="false" data-tab="sound">소리 규칙</button>
       </nav>
       <div class="pane" id="pane-time" role="tabpanel" aria-labelledby="tab-time">
-        <p class="lede">지금의 지구, 그리고 기록으로 남은 그날의 지구. 골라서 그때 지구가 어떤 소리를 냈을지 들어보세요.</p>
+        <p class="lede">최근 기록과 1900년 이후의 과거 기록이 있습니다. 하나를 고르면 그 기간의 지진과 쓰나미를 일어난 순서대로 소리로 들려 드립니다.</p>
         <div class="scene-detail" id="sceneDetail"></div>
         <div class="scene-list" id="sceneList"></div>
-        <p class="memo">과거 기록에는 많은 사람의 아픔이 함께 남아 있어요. 그날을 기억하는 마음으로 들어주세요.</p>
+        <p class="memo">과거 기록에는 많은 사람의 아픔이 함께 남아 있습니다. 그날을 기억하는 마음으로 들어 주십시오.</p>
       </div>
       <div class="pane" id="pane-voice" role="tabpanel" aria-labelledby="tab-voice" hidden></div>
-      <div class="pane" id="pane-adopt" role="tabpanel" aria-labelledby="tab-adopt" hidden></div>
-      <div class="pane" id="pane-diary" role="tabpanel" aria-labelledby="tab-diary" hidden></div>
       <div class="pane" id="pane-sound" role="tabpanel" aria-labelledby="tab-sound" hidden>
-        <p class="lede">지진 하나가 음표 하나예요. 무엇이 어떤 소리가 되는지 정리했어요. 단추를 누르면 미리 들어볼 수 있어요.</p>
+        <p class="lede">지진 하나가 음 하나가 됩니다. 무엇이 어떤 소리가 되는지 정리했습니다. 단추를 누르면 미리 들어 볼 수 있습니다.</p>
         <div><div class="eyebrow">규모 → 음높이</div></div>
-        <p class="lede" style="margin-top:-6px">클수록 낮은 음이에요. 화음이 어긋나지 않게 라단조 5음 음계에 맞췄어요.</p>
+        <p class="lede" style="margin-top:-6px">클수록 낮은 음입니다. 화음이 어긋나지 않도록 라단조 5음 음계에 맞췄습니다.</p>
         <div class="scale" id="scaleRow"></div>
+        <p class="lede">1900년 이후 기록에는 규모 7 이상만 있으므로 규모 7~9.5를 같은 음역에 넓게 펼쳤습니다.</p>
+        <div class="scale" id="scaleRowEra"></div>
         <div><div class="eyebrow" id="depthEyebrow">깊이 → 음색</div></div>
         <div class="depthbar" aria-hidden="true"></div>
         <div class="depthticks"><span>0</span><span>20</span><span>100</span><span>300</span><span>700 km</span></div>
         <div class="voice-list" id="voiceList"></div>
+        <div><div class="eyebrow">쓰나미 → 물결 소리</div></div>
+        <p class="lede" style="margin-top:-6px">NOAA 기록의 최대 높이가 높을수록 물결 소리가 더 크고 길고 낮아집니다. 관측 지점이 많을수록 울림이 넓게 퍼집니다. 지진이 일으킨 쓰나미는 그 지진 바로 뒤에 울리고, 짝이 되는 지진이 없는 쓰나미(화산·산사태 등)는 기록된 시각에 울립니다. 지구 위에는 청록색 물결이 바다로만 퍼집니다.</p>
+        <div class="row" id="tsuDemo"></div>
         <div><div class="eyebrow">위치 → 방향</div></div>
-        <p class="lede" style="margin-top:-6px">화면 왼쪽에서 난 지진은 왼쪽 귀에서 들려요. 지구 반대편 지진은 벽 너머처럼 먹먹하게 들려요.</p>
+        <p class="lede" style="margin-top:-6px">화면 왼쪽에서 일어난 지진은 왼쪽 귀에서 들립니다. 지구 반대편에서 일어난 지진은 벽 너머처럼 먹먹하게 들립니다.</p>
         <div><div class="eyebrow">활동량 → 심박</div></div>
-        <p class="lede" style="margin-top:-6px">재생 중인 시각 기준으로 직전 한 시간 동안 지진이 많고 클수록 심장이 빨리 뛰어요. 큰 지진이 오면 한 박자 멎었다가 크게 뛰어요.</p>
+        <p class="lede" style="margin-top:-6px">재생 중인 시각을 기준으로 직전 한 시간 동안 지진이 많고 클수록 심박이 빨라집니다. 큰 지진이 오면 한 박자 쉬었다가 크게 뜁니다. 1900년 이후 기록은 직전 30일을 기준으로 셉니다.</p>
+        <div><div class="eyebrow">시간 → 재생 속도</div></div>
+        <p class="lede" style="margin-top:-6px">지진 사이의 실제 간격을 로그 눈금으로 줄여서 들려 드립니다. 최근 기록은 몇 분이 1초 남짓, 1900년 이후 기록은 몇 주가 1초 남짓입니다.</p>
         <p class="src-note" id="srcNote"></p>
       </div>
     </aside>
 
     <section id="now" class="glass" aria-live="polite">
-      <div class="now-mag"><span class="m">규모</span><span id="nowMag">–</span></div>
+      <div class="now-mag"><span class="m" id="nowMagLabel">규모</span><span id="nowMag">–</span></div>
       <div class="now-body">
-        <div id="nowPlace">재생하면 지진이 하나씩 울려요</div>
-        <div id="nowOrig">지구 위의 점을 누르면 그 지진만 따로 들을 수 있어요</div>
-        <div class="now-meta"><span id="nowWhen"></span><span id="nowDepth"></span><span id="nowVoice"></span><a id="nowLink" href="https://earthquake.usgs.gov/earthquakes/map/" target="_blank" rel="noopener">USGS 기록 ↗</a></div>
+        <div id="nowPlace">재생하면 지진이 하나씩 울립니다</div>
+        <div id="nowOrig">지구 위의 점을 누르면 그 지진만 따로 들을 수 있습니다</div>
+        <div class="now-meta"><span id="nowWhen"></span><span id="nowDepth"></span><span id="nowVoice"></span><span id="nowTsu" class="tsu-line" hidden></span><a id="nowLink" href="https://earthquake.usgs.gov/earthquakes/map/" target="_blank" rel="noopener">USGS 기록 ↗</a><a id="nowTsuLink" href="https://www.ngdc.noaa.gov/hazel/view/hazards/tsunami/event-search" target="_blank" rel="noopener" hidden>NOAA 쓰나미 기록 ↗</a></div>
       </div>
       <div class="gauge" title="깊이 (0–700 km)"><i id="gaugeMark"></i></div>
     </section>
@@ -405,19 +406,19 @@ h3{margin:0;font:500 15px/1.3 var(--f-display);text-wrap:balance}
       <div class="deck-row">
         <button id="playBtn" class="play" aria-label="재생"><svg viewBox="0 0 18 18" aria-hidden="true"><path id="playIcon" d="M4 2.5v13l11-6.5z"/></svg></button>
         <div class="tl-wrap">
-          <canvas id="timeline" aria-label="재생 위치. 눌러서 원하는 시각으로 이동해요."></canvas>
+          <canvas id="timeline" aria-label="재생 위치입니다. 눌러서 원하는 시각으로 이동할 수 있습니다."></canvas>
           <div class="tl-labels"><span id="tlStart"></span><span id="tlCount"></span><span id="tlEnd"></span></div>
         </div>
         <div class="deck-btns">
-          <button id="menuBtn" class="chip only-mobile" aria-expanded="false">시간 여행 · 메뉴</button>
+          <button id="menuBtn" class="chip only-mobile" aria-expanded="false">기록 · 메뉴</button>
           <div class="kbd" role="group" aria-label="악기">
             <button class="kbd-arrow" id="voicePrev" aria-label="이전 악기">◀</button>
-            <button class="lcd" id="lcd" aria-label="악기 고르기"><span class="lcd-num" id="lcdNum">000</span><span class="lcd-name" id="lcdName">EARTH ORCH</span><span class="lcd-ko" id="lcdKo">지구 오케스트라</span><span class="lcd-sub"><span id="lcdSub">지구 오케스트라</span><span class="lcd-beat" id="lcdBeat">♥ HEART</span></span></button>
+            <button class="lcd" id="lcd" aria-label="악기 고르기"><span class="lcd-num" id="lcdNum">000</span><span class="lcd-name" id="lcdName">ORCHESTRA</span><span class="lcd-ko" id="lcdKo">오케스트라</span><span class="lcd-sub"><span id="lcdSub">오케스트라</span><span class="lcd-beat" id="lcdBeat">♥ HEART</span></span></button>
             <button class="kbd-arrow" id="voiceNext" aria-label="다음 악기">▶</button>
           </div>
           <button id="speedBtn" class="chip" title="재생 속도">보통 속도</button>
-          <button id="xrayBtn" class="chip" aria-pressed="false" title="지구를 투명하게 해서 지진이 난 깊이를 봐요">지구 속 보기</button>
-          <button id="followBtn" class="chip" aria-pressed="true" title="카메라가 지진을 따라가요">따라가기</button>
+          <button id="xrayBtn" class="chip" aria-pressed="false" title="지구를 투명하게 해서 지진이 일어난 깊이를 보여 줍니다">깊이 보기</button>
+          <button id="followBtn" class="chip" aria-pressed="true" title="카메라가 지진을 따라갑니다">따라가기</button>
           <button id="muteBtn" class="chip" aria-pressed="false">소리 끄기</button>
         </div>
       </div>
@@ -426,21 +427,20 @@ h3{margin:0;font:500 15px/1.3 var(--f-display);text-wrap:balance}
 
   <div id="caption" aria-live="polite"><div class="cap-eye" id="capEye"></div><div class="cap-mag" id="capMag"></div><div class="cap-title" id="capTitle"></div><div class="cap-sub" id="capSub"></div><div class="cap-line"></div></div>
   <div id="toast" role="status"></div>
-  <div id="pickHint" class="pill" hidden>지구 위 원하는 곳을 눌러 입양하세요</div>
 
   <div id="gate" role="dialog" aria-modal="true" aria-labelledby="gateTitle">
     <div class="gate-card">
-      <div class="gate-eyebrow">USGS 실제 지진 기록 · 3D 지구 · 입체 음향</div>
+      <div class="gate-eyebrow">USGS 지진 · NOAA 쓰나미 · 3D 지구 · 입체 음향</div>
       <h1 id="gateTitle">Earth<b>BPM</b></h1>
       <svg class="gate-ecg" viewBox="0 0 520 48" aria-hidden="true"><path class="base" pathLength="1" d="M0 30H150l8-5 8 5h20l5 4 9-30 9 38 6-12h22q14-11 28 0h36l8-5 8 5h20l5 4 9-30 9 38 6-12h22q14-11 28 0h66"/><path class="run" pathLength="1" d="M0 30H150l8-5 8 5h20l5 4 9-30 9 38 6-12h22q14-11 28 0h36l8-5 8 5h20l5 4 9-30 9 38 6-12h22q14-11 28 0h66"/></svg>
-      <p id="gateLede">지난 24시간 동안 지구가 몸을 떤 순간들을 음표로 바꿔, 지구의 심장 소리로 들려드려요.</p>
+      <p id="gateLede">지난 24시간 동안 일어난 지진을 음으로 바꿔 지구의 심장 소리로 들려 드립니다.</p>
       <p class="now-bpm" id="gateBpm"></p>
       <p class="gate-voice" id="gateVoice"></p>
       <div class="gate-actions">
-        <button id="startBtn" class="primary"><svg viewBox="0 0 32 29" aria-hidden="true"><path d="M16 28.5C6 21 0 15.5 0 8.6 0 3.6 3.9 0 8.6 0c3 0 5.8 1.6 7.4 4.2C17.6 1.6 20.4 0 23.4 0 28.1 0 32 3.6 32 8.6 32 15.5 26 21 16 28.5z"/></svg>심장 소리 듣기</button>
+        <button id="startBtn" class="primary"><svg viewBox="0 0 32 29" aria-hidden="true"><path d="M16 28.5C6 21 0 15.5 0 8.6 0 3.6 3.9 0 8.6 0c3 0 5.8 1.6 7.4 4.2C17.6 1.6 20.4 0 23.4 0 28.1 0 32 3.6 32 8.6 32 15.5 26 21 16 28.5z"/></svg>소리 켜고 시작</button>
         <button id="silentBtn" class="ghost">소리 없이 보기</button>
       </div>
-      <p class="gate-hint">이어폰을 끼면 지진이 난 쪽에서 소리가 들려요. 큰 지진은 낮은 음, 깊은 지진은 길고 부드러운 소리로 울려요.</p>
+      <p class="gate-hint">이어폰을 끼면 지진이 일어난 쪽에서 소리가 들립니다. 큰 지진은 낮은 음으로, 깊은 지진은 길고 부드러운 소리로 울립니다.</p>
     </div>
   </div>
 </div>
@@ -472,6 +472,8 @@ const HAS3 = typeof THREE !== 'undefined' && THREE.OrbitControls && THREE.Effect
 
 /* ================= Korean text ================= */
 const DIRK = {N:'북',S:'남',E:'동',W:'서'};
+const DIRW = {north:'북',south:'남',east:'동',west:'서',northeast:'북동',northwest:'북서',southeast:'남동',southwest:'남서'};
+const PART = {northern:'북부',southern:'남부',eastern:'동부',western:'서부',central:'중부',northeastern:'북동부',northwestern:'북서부',southeastern:'남동부',southwestern:'남서부'};
 const REGION = {
   'CA':'캘리포니아','California':'캘리포니아','Alaska':'알래스카','Hawaii':'하와이','Nevada':'네바다','Utah':'유타',
   'Washington':'워싱턴주','Oregon':'오리건','Texas':'텍사스','New Mexico':'뉴멕시코','Oklahoma':'오클라호마','Kansas':'캔자스',
@@ -486,26 +488,121 @@ const REGION = {
   'Taiwan':'대만','Kazakhstan':'카자흐스탄','Argentina':'아르헨티나','Saudi Arabia':'사우디아라비아','Solomon Islands':'솔로몬 제도',
   'Somalia':'소말리아','Afghanistan':'아프가니스탄','Wallis and Futuna':'왈리스 푸투나','Northern Mariana Islands':'북마리아나 제도',
   'Iran':'이란','Pakistan':'파키스탄','Honduras':'온두라스','Haiti':'아이티','Cuba':'쿠바','Bolivia':'볼리비아','Venezuela':'베네수엘라',
-  'Iceland':'아이슬란드','Portugal':'포르투갈','Spain':'스페인','Algeria':'알제리','Morocco':'모로코','Ethiopia':'에티오피아','Kenya':'케냐'
+  'Iceland':'아이슬란드','Portugal':'포르투갈','Spain':'스페인','Algeria':'알제리','Morocco':'모로코','Ethiopia':'에티오피아','Kenya':'케냐',
+  'Uzbekistan':'우즈베키스탄','Turkmenistan':'투르크메니스탄','Romania':'루마니아','Bulgaria':'불가리아','Brazil':'브라질',
+  'Martinique':'마르티니크','Guadeloupe':'과들루프','South Sudan':'남수단','Palau':'팔라우','North Korea':'북한','Bangladesh':'방글라데시',
+  'Saint Pierre and Miquelon':'생피에르 미클롱','Maldives':'몰디브','Saint Lucia':'세인트루시아','Micronesia':'미크로네시아 연방',
+  'Mongolia':'몽골','Antigua and Barbuda':'앤티가 바부다','Georgia':'조지아','Egypt':'이집트','Zimbabwe':'짐바브웨','Iraq':'이라크',
+  'Jamaica':'자메이카','Cayman Islands':'케이맨 제도','Malaysia':'말레이시아','Australia':'오스트레일리아'
+};
+// lower-case keys: islands, seas, ridges and provinces that the place patterns below combine
+const PLACE = {
+  'loyalty islands':'로열티 제도','fiji islands':'피지 제도','south indian ocean':'남인도양','north atlantic ocean':'북대서양',
+  'mariana islands':'마리아나 제도','sea of okhotsk':'오호츠크해','new britain':'뉴브리튼섬','new ireland':'뉴아일랜드섬','bougainville':'부건빌섬',
+  'honshu':'혼슈','hokkaido':'홋카이도','kyushu':'규슈','shikoku':'시코쿠','ryukyu islands':'류큐 열도','izu islands':'이즈 제도',
+  'bonin islands':'오가사와라 제도','volcano islands':'화산 열도','kuril islands':'쿠릴 열도','kamchatka peninsula':'캄차카반도',
+  'komandorskiye ostrova':'코만도르스키예 제도','fox islands':'폭스 제도','rat islands':'래트 제도','andreanof islands':'안드레아노프 제도',
+  'aleutian islands':'알류샨 열도','alaska peninsula':'알래스카반도','kodiak island':'코디액섬','gulf of alaska':'알래스카만',
+  'mindanao':'민다나오섬','luzon':'루손섬','sumatra':'수마트라섬','java':'자와섬','sulawesi':'술라웨시섬','halmahera':'할마헤라섬',
+  'papua':'파푸아','new guinea':'뉴기니섬','pulau pulau tanimbar':'타님바르 제도','kepulauan babar':'바바르 제도',
+  'banda sea':'반다해','molucca sea':'몰루카해','celebes sea':'셀레베스해','flores sea':'플로레스해','ceram sea':'세람해','bismarck sea':'비스마르크해',
+  'macquarie island':'매쿼리섬','auckland islands':'오클랜드 제도','kermadec islands':'케르마데크 제도','south island of new zealand':'뉴질랜드 남섬',
+  'santa cruz islands':'산타크루스 제도','samoa islands':'사모아 제도','nicobar islands':'니코바르 제도','chagos archipelago':'차고스 제도',
+  'south sandwich islands':'사우스샌드위치 제도','south georgia island':'사우스조지아섬','falkland islands':'포클랜드 제도',
+  'scotia sea':'스코샤해','drake passage':'드레이크 해협','easter island':'이스터섬','ascension island':'어센션섬',
+  'mid-atlantic ridge':'대서양 중앙 해령','reykjanes ridge':'레이캬네스 해령','azores-cape st. vincent ridge':'아조레스-세인트빈센트곶 해령',
+  'east pacific rise':'동태평양 해팽','southeast indian ridge':'남동 인도양 해령','southwest indian ridge':'남서 인도양 해령',
+  'mid-indian ridge':'중앙 인도양 해령','carlsberg ridge':'칼스버그 해령','owen fracture zone':'오언 단열대',
+  'state of yap':'야프주','federated states of micronesia':'미크로네시아 연방','pagan':'파간섬',
+  'xinjiang':'신장','qinghai':'칭하이','sichuan':'쓰촨','yunnan':'윈난','gansu':'간쑤','xizang':'시짱(티베트)',
+  'qinghai-sichuan border':'칭하이-쓰촨 경계','hindu kush':'힌두쿠시','british columbia-yukon border':'브리티시컬럼비아-유콘 경계',
+  'jalisco':'할리스코','chiapas':'치아파스','oaxaca':'오악사카','baja california':'바하칼리포르니아','gulf of california':'캘리포니아만',
+  'acapulco':'아카풀코','quetzaltenango':'케찰테낭고','central america':'중앙아메리카',
+  'los lagos':'로스라고스','araucania':'아라우카니아','atacama':'아타카마','tarapaca':'타라파카','san juan':'산후안','nippes':'니프',
+  'aegean sea':'에게해','tasman sea':'태즈먼해','strait of gibraltar':'지브롤터 해협','baffin bay':'배핀만'
 };
 const WHOLE = {
   'Fiji region':'피지 부근','south of the Fiji Islands':'피지 제도 남쪽','central Mid-Atlantic Ridge':'대서양 중앙 해령 (적도 부근)',
-  'southern Mid-Atlantic Ridge':'대서양 중앙 해령 남부','northern Mid-Atlantic Ridge':'대서양 중앙 해령 북부','Mid-Indian Ridge':'중앙 인도양 해령',
-  'Southwest Indian Ridge':'남서 인도양 해령','southern East Pacific Rise':'동태평양 해팽 남부','central East Pacific Rise':'동태평양 해팽 중부',
-  'southeast of Easter Island':'이스터섬 남동쪽','west of Macquarie Island':'매쿼리섬 서쪽','Macquarie Island region':'매쿼리섬 부근',
-  'Kermadec Islands region':'케르마데크 제도 부근','Kermadec Islands, New Zealand':'뉴질랜드 케르마데크 제도','South Sandwich Islands region':'사우스샌드위치 제도 부근',
-  'Volcano Islands, Japan region':'일본 화산 열도 부근','Izu Islands, Japan region':'일본 이즈 제도 부근','Bonin Islands, Japan region':'일본 오가사와라 제도 부근',
+  'southern Mid-Atlantic Ridge':'대서양 중앙 해령 남부','northern Mid-Atlantic Ridge':'대서양 중앙 해령 북부',
+  'southern East Pacific Rise':'동태평양 해팽 남부','central East Pacific Rise':'동태평양 해팽 중부',
+  'Kermadec Islands, New Zealand':'뉴질랜드 케르마데크 제도','Volcano Islands, Japan region':'일본 화산 열도 부근',
+  'Izu Islands, Japan region':'일본 이즈 제도 부근','Bonin Islands, Japan region':'일본 오가사와라 제도 부근',
   'southwestern Ryukyu Islands, Japan':'일본 류큐 열도 남서부','Rat Islands, Aleutian Islands, Alaska':'알래스카 알류샨 열도 (래트 제도)',
-  'off the coast of Ecuador':'에콰도르 앞바다','North Atlantic Ocean':'북대서양','off the east coast of Honshu, Japan':'일본 혼슈 동쪽 앞바다',
-  'near the east coast of Honshu, Japan':'일본 혼슈 동쪽 연안','eastern Honshu, Japan':'일본 혼슈 동부',
-  '2011 Great Tohoku Earthquake, Japan':'동일본 대지진 · 도호쿠 앞바다','2004 Sumatra - Andaman Islands Earthquake':'수마트라-안다만 대지진',
-  'Pazarcik earthquake, Kahramanmaras earthquake sequence':'튀르키예 파자르즉 지진 (카흐라만마라시)',
-  'Elbistan earthquake, Kahramanmaras earthquake sequence':'튀르키예 엘비스탄 지진 (카흐라만마라시)',
-  '2025 Kamchatka Peninsula, Russia Earthquake':'러시아 캄차카반도 대지진','Turkey-Syria border region':'튀르키예·시리아 국경',
-  'Central Turkey':'튀르키예 중부','eastern Turkey':'튀르키예 동부','Adana, Turkey':'튀르키예 아다나','Nicobar Islands, India region':'인도 니코바르 제도 부근',
-  'Maug Islands region, Northern Mariana Islands':'북마리아나 제도 마우그섬 부근','Kuril Islands':'쿠릴 열도','Samoa Islands region':'사모아 제도 부근',
-  'off the coast of Central America':'중앙아메리카 앞바다','Nepal':'네팔','south of Java, Indonesia':'인도네시아 자와섬 남쪽','central Peru':'페루 중부',
-  'Carlsberg Ridge':'칼스버그 해령','Banda Sea':'반다해','Kepulauan Babar, Indonesia':'인도네시아 바바르 제도','Pagan region, Northern Mariana Islands':'북마리아나 제도 파간섬 부근'
+  'Turkey-Syria border region':'튀르키예·시리아 국경','Adana, Turkey':'튀르키예 아다나',
+  'Maug Islands region, Northern Mariana Islands':'북마리아나 제도 마우그섬 부근','Pagan region, Northern Mariana Islands':'북마리아나 제도 파간섬 부근',
+  'Event 36 Novarupta-Mount Katmai area, Alaska Peninsula':'알래스카반도 노바럽타-카트마이산 일대',
+  'Mount McKinley (Denali) area, Alaska':'알래스카 매킨리산(디날리) 일대'
+};
+// events that USGS names after themselves
+const NAMED = {
+  'The 1905 Kangra, India Earthquake':'1905년 인도 캉그라 지진','The 1905 Tsetserleg, Mongolia Earthquake':'1905년 몽골 체체를레그 지진',
+  'The 1905 Bulnay (Bolnai), Mongolia Earthquake':'1905년 몽골 불나이 지진','1906 Ecuador-Colombia Earthquake':'1906년 에콰도르-콜롬비아 지진',
+  'The 1906 San Francisco, California Earthquake':'1906년 샌프란시스코 대지진',
+  '1906 Western Aleutian Islands (Hawadax/Rat Islands) Earthquake':'1906년 알류샨 열도 서부 지진','The 1906 Valparaiso, Chile Earthquake':'1906년 칠레 발파라이소 지진',
+  '1906 Papua New Guinea Earthquake':'1906년 파푸아뉴기니 지진','The 1907 Sumatra Earthquake and Tsunami':'1907년 수마트라 지진·쓰나미',
+  'The 1908 Messina, Italy Earthquake and Tsunami':'1908년 이탈리아 메시나 지진·쓰나미','1910 Taiwan Earthquake':'1910년 대만 지진',
+  'The 1911 Kemin Earthquake, Kyrgyzstan':'1911년 키르기스스탄 케민 지진','1914 Biak Earthquake':'1914년 인도네시아 비악섬 지진',
+  '1917 Kermadec Islands, New Zealand Earthquake':'1917년 케르마데크 제도 지진','The 1917 Samoa-Tonga Earthquake':'1917년 사모아-통가 지진',
+  '1918 Mindanao, Philippines Earthquake':'1918년 필리핀 민다나오 지진','1918 Kuril Islands Earthquake':'1918년 쿠릴 열도 지진',
+  '1919 Tonga Earthquake':'1919년 통가 지진','1919 Papua New Guinea Earthquake':'1919년 파푸아뉴기니 지진',
+  '1920 Hualien, Taiwan Earthquake':'1920년 대만 화롄 지진','1920 Vanuatu Earthquake':'1920년 바누아투 지진',
+  'The 1923 Humboldt County, California Earthquake':'1923년 캘리포니아 훔볼트 지진','1923 Kamchatka, Russia Earthquake':'1923년 캄차카 지진',
+  '1924 Mindanao, Philippines Earthquake':'1924년 필리핀 민다나오 지진','1929 South Sandwich Islands Earthquake':'1929년 사우스샌드위치 제도 지진',
+  '1932 Jalisco, Mexico Earthquake':'1932년 멕시코 할리스코 지진','1933 Sanriku (Sanriku-oki) Earthquake, Japan':'1933년 쇼와 산리쿠 지진',
+  '1934 Bihar-Nepal Earthquake':'1934년 네팔-비하르 지진','1938 Banda Sea Earthquake':'1938년 반다해 지진',
+  '1938 Semidi Islands, Alaska Earthquake':'1938년 알래스카 세미디 제도 지진','1939 Sulawesi Earthquake':'1939년 술라웨시 지진',
+  '1941 Hyuganada Earthquake':'1941년 휴가나다 지진','1942 Southwest Indian Ridge Earthquake':'1942년 남서 인도양 해령 지진',
+  '1944 Toankai Earthquake':'1944년 도난카이 지진','1945 Makran Subduction Zone Earthquake':'1945년 파키스탄 마크란 지진',
+  'The 1946 Unimak Island, Alaska Earthquake':'1946년 알래스카 우니막섬 지진','The 1946 Vancouver Island, Canada Earthquake':'1946년 캐나다 밴쿠버섬 지진',
+  'The 1949 Haida Gwaii, Canada Earthquake':'1949년 캐나다 하이다과이 지진','1950 Assam-Tibet Earthquake':'1950년 아삼-티베트 대지진',
+  '1952 Tokachi-Oki Earthquake':'1952년 도카치 앞바다 지진','The 1952 Kern County, California Earthquake':'1952년 캘리포니아 컨카운티 지진',
+  'The 1954 Fairview Peak, Nevada Earthquake':'1954년 네바다 페어뷰피크 지진','1957 Atka, Alaska Earthquake':'1957년 알래스카 안드레아노프 제도 지진',
+  '1957 Gobi-Altay, Mongolia Earthquake':'1957년 몽골 고비-알타이 지진','1958 Kuril Islands Earthquake':'1958년 쿠릴 열도 지진',
+  'The 1959 Hebgen Lake, Montana Earthquake':'1959년 몬태나 헤브겐호 지진','1960 Great Chilean Earthquake (Valdivia Earthquake)':'1960년 칠레 대지진 (발디비아 지진)',
+  '1963 Kuril Islands Earthquake':'1963년 쿠릴 열도 지진','1963 Banda Sea Earthquake':'1963년 반다해 지진',
+  'The 1964 Prince William Sound, Alaska Earthquake':'1964년 알래스카 대지진 (프린스윌리엄 사운드)','1965 Ceram Sea Earthquake':'1965년 세람해 지진',
+  '1965 Western Aleutian Islands (Hawadax/Rat Islands) Earthquake':'1965년 알류샨 열도 래트 제도 지진','1968 Tokachi-Oki Earthquake':'1968년 도카치 앞바다 지진',
+  '1969 Hokkaido Toho-oki Earthquake':'1969년 홋카이도 동쪽 앞바다 지진','1971 New Britain Earthquake':'1971년 뉴브리튼섬 지진',
+  '1971 Bougainville Earthquake':'1971년 부건빌섬 지진','1972 Mindanao, Philippines Earthquake':'1972년 필리핀 민다나오 지진',
+  '1976 Kermadec Islands, New Zealand Earthquake':'1976년 케르마데크 제도 지진','1977 Sumba, Indonesia Earthquake':'1977년 인도네시아 숨바섬 지진',
+  'The 1980 Eureka, California Earthquake':'1980년 캘리포니아 유레카 지진','1985 Michoacan, Mexico Earthquake':'1985년 멕시코 미초아칸 지진',
+  '1986 Atka, Alaska Earthquake':'1986년 알래스카 안드레아노프 제도 지진','1989 Macquarie Ridge Earthquake':'1989년 매쿼리 해령 지진',
+  'The 1992 Petrolia, California Earthquake':'1992년 캘리포니아 페트롤리아 지진','The 1992 Landers, California Earthquake':'1992년 캘리포니아 랜더스 지진',
+  '1995 Colima-Jalisco, Mexico Earthquake':'1995년 멕시코 콜리마-할리스코 지진','1996 Biak, Indonesia Earthquake':'1996년 인도네시아 비악섬 지진',
+  '1998 Balleny Islands Earthquake':'1998년 발레니 제도 지진','The 1999 Hector Mine, California Earthquake':'1999년 캘리포니아 헥터마인 지진',
+  '2000 New Ireland Earthquake':'2000년 뉴아일랜드섬 지진','2002 Denali Fault, Alaska Earthquake':'2002년 알래스카 디날리 단층 지진',
+  '2003 Tokachi-Oki Earthquake':'2003년 도카치 앞바다 지진','2004 Tasman Sea Earthquake':'2004년 태즈먼해 지진',
+  '2004 Sumatra - Andaman Islands Earthquake':'2004년 수마트라-안다만 대지진','2006 Tonga Earthquake':'2006년 통가 지진',
+  '2006 Kuril Islands Earthquake':'2006년 쿠릴 열도 지진','2007 Kuril Islands Earthquake':'2007년 쿠릴 열도 지진',
+  '2007 Solomon Islands Earthquake':'2007년 솔로몬 제도 지진','2009 Samoa Earthquake':'2009년 사모아 지진',
+  '2010 Maule, Chile Earthquake':'2010년 칠레 마울레 지진','The 2010 Sierra El Mayor, B.C., Mexico Earthquake':'2010년 멕시코 엘마요르-쿠카파 지진',
+  '2011 Great Tohoku Earthquake, Japan':'2011년 동일본 대지진','2012 Wharton Basin Earthquake':'2012년 인도양 와튼 해분 지진',
+  '2012 Wharton Basin Aftershock':'2012년 와튼 해분 여진','2013 Santa Cruz Islands Earthquake':'2013년 산타크루스 제도 지진',
+  '2013 Sea of Okhotsk Earthquake':'2013년 오호츠크해 심발 지진','2017 Tehuantepec, Mexico Earthquake':'2017년 멕시코 테우안테펙 지진',
+  '2018 Fiji Earthquake':'2018년 피지 심발 지진','Ridgecrest Earthquake Sequence':'2019년 캘리포니아 리지크레스트 지진',
+  '2020 Perryville, Alaska Earthquake':'2020년 알래스카 페리빌 지진','2020 Sand Point, Alaska Earthquake':'2020년 알래스카 샌드포인트 지진',
+  '2021 Kermadec Islands, New Zealand Earthquake':'2021년 케르마데크 제도 지진','2021 Chignik, Alaska Earthquake':'2021년 알래스카 치그닉 지진',
+  '2021 South Sandwich Islands Earthquake':'2021년 사우스샌드위치 제도 지진',
+  'Pazarcik earthquake, Kahramanmaras earthquake sequence':'2023년 튀르키예 파자르즉 지진',
+  'Elbistan earthquake, Kahramanmaras earthquake sequence':'2023년 튀르키예 엘비스탄 지진','2023 Sand Point, Alaska Earthquake':'2023년 알래스카 샌드포인트 지진',
+  '2024 Noto Peninsula, Japan Earthquake':'2024년 노토반도 지진','2024 Hyuganada Sea, Japan Earthquake':'2024년 휴가나다 지진',
+  '2024 Offshore Cape Mendocino, California Earthquake':'2024년 캘리포니아 멘도시노곶 앞바다 지진',
+  '2025 Southern Tibetan Plateau Earthquake':'2025년 티베트 고원 남부 지진','2025 Mandalay, Burma (Myanmar) Earthquake':'2025년 미얀마 만달레이 지진',
+  '2025 Drake Passage Earthquake':'2025년 드레이크 해협 지진','2025 Sand Point, Alaska Earthquake':'2025년 알래스카 샌드포인트 지진',
+  '2025 Eastern Kamchatka, Russia Earthquake':'2025년 캄차카 동부 지진','2025 Kamchatka Peninsula, Russia Earthquake':'2025년 캄차카 대지진',
+  '2025 Southern Drake Passage Earthquake':'2025년 드레이크 해협 남부 지진','2025 Hubbard Glacier Earthquake':'2025년 알래스카 허버드 빙하 지진',
+  '2025 Aomori Prefecture, Japan Earthquake':'2025년 아오모리현 앞바다 지진'
+};
+// great quakes whose USGS place is only "N km of a town"
+const NAMED_ID = {
+  iscgem913362:'1918년 칠레 아타카마 지진', official19221111043251_30:'1922년 칠레 바예나르 지진', iscgem901374:'1940년 페루 리마 지진',
+  iscgem900444:'1942년 페루 나스카 지진', iscgem899789:'1943년 칠레 일라펠 지진', iscgem898698:'1946년 난카이 지진',
+  iscgem896170:'1950년 칠레 아타카마 심발 지진', official19521104165830_30:'1952년 캄차카 대지진', iscgem879106:'1960년 칠레 콘셉시온 지진 (발디비아 전진)',
+  iscgem842581:'1966년 페루 리마 앞바다 지진', iscgem794176:'1970년 페루-콜롬비아 심발 지진', usp0002ccz:'1985년 칠레 발파라이소 지진',
+  usp0006dzc:'1994년 볼리비아 심발 지진', usp0006kdp:'1994년 쿠릴 열도 시코탄 지진', usp000714t:'1995년 칠레 안토파가스타 지진',
+  official20010623203314130_33:'2001년 페루 아레키파 지진', official20050328160936530_30:'2005년 니아스-시믈루에 지진',
+  usp000fjta:'2007년 페루 피스코 지진', official20070912111026830_34:'2007년 수마트라 벵쿨루 지진', usc000nzvd:'2014년 칠레 이키케 지진',
+  us20003k7a:'2015년 칠레 일라펠 지진', us60003sc0:'2019년 페루 북부 심발 지진'
 };
 const TOWN = {
   'Gyeongju':'경주','Ōfunato':'오후나토','Kamaishi':'가마이시','Ishinomaki':'이시노마키','Namie':'나미에','Iwaki':'이와키','Hasaki':'하사키',
@@ -514,41 +611,80 @@ const TOWN = {
   'Kahramanmaraş':'카흐라만마라시','Nurdağı':'누르다으','Pazarcık':'파자르즉','Göksun':'괵순','Nurhak':'누르하크','Bharatpur':'바라트푸르',
   'Nagarkot':'나가르코트','Kodāri':'코다리','Dhulikhel':'둘리켈','Kirtipur':'키르티푸르','Pokhara':'포카라','Kushiro':'구시로','Takahagi':'다카하기',
   'The Geysers':'더 가이저스','Anza':'안자','Cobb':'코브','Cloverdale':'클로버데일','Pāhala':'파할라','Volcano':'볼케이노','Milford':'밀퍼드',
-  'Lake Minchumina':'레이크 민추미나','Los Asientos':'로스아시엔토스','Río Grande':'리오그란데','La Tronosa':'라트로노사','Kokopo':'코코포'
+  'Lake Minchumina':'레이크 민추미나','Los Asientos':'로스아시엔토스','Río Grande':'리오그란데','La Tronosa':'라트로노사','Kokopo':'코코포',
+  'Lata':'라타','Isangel':'이상겔','Sola':'솔라','Kuril’sk':'쿠릴스크','Kirakira':'키라키라','Panguna':'팡구나','Adak':'에이댁','Port-Olry':'포르올리',
+  'Port-Vila':'포트빌라','Shikotan':'시코탄','Kimbe':'킴베','Attu Station':'애투','Hualien City':'화롄','Gorontalo':'고론탈로','Hihifo':'히히포',
+  'Neiafu':'네이아푸','Ternate':'테르나테','Hengchun':'헝춘','Levuka':'레부카','Ust’-Kamchatsk Staryy':'우스티캄차츠크','Tadine':'타딘',
+  'Luganville':'루갠빌','Lospalos':'로스팔로스','Malango':'말랑고','Abepura':'아베푸라','Sarangani':'사랑가니','Tobelo':'토벨로','Jurm':'주름',
+  'Honiara':'호니아라','Bengkulu':'벵쿨루','Ambon':'암본','Gizo':'기조','Tual':'투알','Antofagasta':'안토파가스타','Taltal':'탈탈','Gisborne':'기즈번',
+  'Iñapari':'이냐파리','Kangding':'캉딩','Finschhafen':'핀시하펜','Nabire':'나비레','Shingū':'신구','Iquique':'이키케','Puerto Madero':'푸에르토마데로',
+  'Palu':'팔루','Manokwari':'마노콰리','Biak':'비악','Kavieng':'카비엥','Wewak':'웨왁','Sungai Penuh':'숭아이프누','Houma':'호우마','Tarauacá':'타라우아카',
+  'Naze':'나제','Nikolski':'니콜스키','Aitape':'아이타페','Haveluloto':'하벨룰로토','Maumere':'마우메레','Te Anau':'테아나우','Pondaguitan':'폰다기탄',
+  'Sofifi':'소피피','Sinabang':'시나방','Barranca':'바랑카','Tabiauan':'타비아우안','Angoram':'앙고람','Ozernovskiy':'오제르놉스키','Lakatoro':'라카토로',
+  'Diego de Almagro':'디에고데알마그로','Inarajan Village':'이나라한','Norsup':'노르수프','Pangai':'팡가이','Constitución':'콘스티투시온',
+  'Ishigaki':'이시가키','Koshima':'고시마','Katsuura':'가쓰우라','Merizo Village':'메리소','Honchō':'혼초','Carahue':'카라우에','Mil’kovo':'밀코보',
+  'Sorong':'소롱','Puerto El Triunfo':'푸에르토엘트리운포','Hachinohe':'하치노헤','Pariaman':'파리아만','Yujing':'위징','Saipan':'사이판',
+  'Illapel':'이야펠','Riverton':'리버턴','Kandrian':'칸드리안','Champerico':'참페리코','Nemuro':'네무로','Bitung':'비퉁','Aguililla':'아길리야',
+  'Gazli':'가즐리','Valparaíso':'발파라이소','Santiago':'산티아고','Atiquipa':'아티키파','Nishinoomote':'니시노오모테','Bhamo':'바모','La Paz':'라파스',
+  'San Vicente':'산비센테','Saint-Pierre':'생피에르','Corinto':'코린토','Tondano':'톤다노','Sarupathar':'사루파타르','Farkhār':'파르하르',
+  'Murghob':'무르고브','Barcelona':'바르셀로나','Korsakov':'코르사코프','Karluk':'칼럭','Takanabe':'다카나베','Atico':'아티코','Beauséjour':'보세주르',
+  'Yonakuni':'요나구니','Atlasovo':'아틀라소보','Hirara':'히라라','Pundong':'푼동','Baculin':'바쿨린','San Antonio del Estrecho':'산안토니오델에스트레초',
+  'Big Lagoon':'빅라군','Yilan':'이란','Chignik':'치그닉','Aras-asan':'아라스아산','Amberley':'앰벌리','Altay':'알타이','Burica':'부리카',
+  'Ambunti':'암분티','Gili Air':'길리아이르','San Luis':'산루이스','Bamboo Flat':'뱀부플랫','Golfito':'골피토','Balkanabat':'발카나바트',
+  'King Cove':'킹코브','‘Ohonua':'오호누아','San Pedro de Atacama':'산페드로데아타카마','Nagqu':'나취','Baukau':'바우카우','Masachapa':'마사차파',
+  'Sarigerme':'사르게르메','Düzce':'뒤즈제','Klyuchi':'클류치','Cañete':'카녜테','Angol':'앙골','Traiguén':'트라이겐','Kashgar':'카슈가르',
+  'Kashgar, Xinjiang':'신장 카슈가르','Wau':'와우','Tocopilla':'토코피야','Tsunō':'쓰노','Lukatan':'루카탄','Atka':'앳카','Prince Rupert':'프린스루퍼트',
+  'Sucúa':'수쿠아','Wada':'와다','Callao':'카야오','Palimbang':'팔림방','Qā’en':'가엔','Khāsh':'하시','Abra Pampa':'아브라팜파','Kainantu':'카이난투',
+  'Juba':'주바','El Hoyo':'엘오요','Carúpano':'카루파노','Luwuk':'루욱','Azángaro':'아상가로','Vallenar':'바예나르','Huacho':'와초',
+  'Minas de Marcona':'미나스데마르코나','Paramonga':'파라몽가','Reyes':'레예스','Singkil':'싱킬','San Vicente de Cañete':'산비센테데카녜테',
+  'Navarro':'나바로','Laikit, Laikit II (Dimembe)':'라이킷'
 };
+// one step of a USGS region name: "X region", "off the east coast of X", "south of X", "northern X", "near X", "Y, X"
+function trPlace(p){
+  const s=p.trim(), low=s.toLowerCase(); let m;
+  if(PLACE[low]) return PLACE[low];
+  if(REGION[s]) return REGION[s];
+  if(TOWN[s]) return TOWN[s];
+  if((m=s.match(/^(.+) region$/i))) return trPlace(m[1])+' 부근';
+  if((m=s.match(/^(near|off) the (?:(north|south|east|west|northeast|northwest|southeast|southwest) )?coast of (?:the )?(.+)$/i)))
+    return trPlace(m[3])+(m[2]? ' '+DIRW[m[2].toLowerCase()]+'쪽' : '')+(m[1].toLowerCase()==='off'? ' 앞바다' : ' 연안');
+  if((m=s.match(/^(north|south|east|west|northeast|northwest|southeast|southwest) of (?:the )?(.+)$/i))) return trPlace(m[2])+' '+DIRW[m[1].toLowerCase()]+'쪽';
+  if((m=s.match(/^(northern|southern|eastern|western|central|northeastern|northwestern|southeastern|southwestern) (.+)$/i))) return trPlace(m[2])+' '+PART[m[1].toLowerCase()];
+  if((m=s.match(/^near (.+)$/i))) return trPlace(m[1])+' 부근';
+  if((m=s.match(/^offshore (.+)$/i))) return trPlace(m[1])+' 앞바다';
+  const ci=s.lastIndexOf(', ');
+  if(ci>0) return trPlace(s.slice(ci+2))+' '+trPlace(s.slice(0,ci));
+  return s;
+}
 function koPlace(p){
   if(!p) return {main:'위치 정보 없음', sub:''};
+  if(NAMED[p]) return {main:NAMED[p], sub:p, named:true};
   if(WHOLE[p]) return {main:WHOLE[p], sub:p};
-  const m = p.match(/^(\d+)\s?km ([NSEW]{1,3}) of (.+)$/);
+  const m = p.match(/^(?:About )?(\d+)\s?km ([NSEW]{1,3}) of (.+)$/);
   if(m){
-    const km=+m[1], dir=m[2].split('').map(c=>DIRK[c]).join('');
-    const rest=m[3], ci=rest.indexOf(', ');
-    const town = ci<0? rest : rest.slice(0,ci);
-    const region = ci<0? '' : rest.slice(ci+2);
-    const rk = REGION[region] || region;
-    const tk = TOWN[town] || town;
+    const km=+m[1], dir=m[2].split('').map(c=>DIRK[c]).join(''), rest=m[3];
+    let ci=rest.indexOf(', '); if(ci>=0 && !REGION[rest.slice(ci+2)]) ci=rest.lastIndexOf(', '); // "Ensenada, B.C., MX" but "Kashgar, Xinjiang, China"
+    const town = ci<0? rest : rest.slice(0,ci), region = ci<0? '' : rest.slice(ci+2);
+    const rk = region? trPlace(region) : '', tk = trPlace(town);
     const where = km===0 ? tk+' 바로 앞' : `${tk} ${dir}쪽 ${km}km`;
     return {main:(rk? rk+' · ':'')+where, sub:p, region:rk, town:tk};
   }
-  const ci=p.lastIndexOf(', ');
-  if(ci>0){ const r=p.slice(ci+2), t=p.slice(0,ci); if(REGION[r]) return {main:REGION[r]+' · '+(TOWN[t]||t), sub:p, region:REGION[r], town:TOWN[t]||t}; }
-  if(REGION[p]) return {main:REGION[p], sub:p, region:REGION[p]};
-  return {main:p, sub:''};
+  const t=trPlace(p);
+  return {main:t, sub:t===p? '' : p, region:REGION[p]};
 }
-function josa(w, pair){ // pair = [받침 있을 때, 없을 때]
-  const c=w.charCodeAt(w.length-1);
-  if(c<0xAC00||c>0xD7A3) return w+pair[1];
-  return w+(((c-0xAC00)%28)? pair[0]:pair[1]);
-}
-const fmtParts = new Intl.DateTimeFormat('en-US',{timeZone:'Asia/Seoul',year:'numeric',month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false,weekday:'short'});
-const WD={Sun:'일',Mon:'월',Tue:'화',Wed:'수',Thu:'목',Fri:'금',Sat:'토'};
-function kst(ms){ const o={}; for(const p of fmtParts.formatToParts(new Date(ms))) o[p.type]=p.value; if(o.hour==='24') o.hour='00'; return o; }
-const fDate = ms => { const k=kst(ms); return `${k.year}년 ${+k.month}월 ${+k.day}일 (${WD[k.weekday]||''})`; };
+const WDK=['일','월','화','수','목','금','토'];
+// KST is a fixed UTC+9 here (Intl's Asia/Seoul would apply Seoul's 1900s local mean time and old summer-time rules)
+function kst(ms){ const d=new Date(ms+9*3600e3), p=n=>String(n).padStart(2,'0'); return {year:String(d.getUTCFullYear()),month:String(d.getUTCMonth()+1),day:String(d.getUTCDate()),hour:p(d.getUTCHours()),minute:p(d.getUTCMinutes()),second:p(d.getUTCSeconds()),wd:WDK[d.getUTCDay()]}; }
+const fDate = ms => { const k=kst(ms); return `${k.year}년 ${+k.month}월 ${+k.day}일 (${k.wd})`; };
 const fTime = ms => { const k=kst(ms); return `${k.hour}:${k.minute}:${k.second}`; };
 const fHM = ms => { const k=kst(ms); return `${k.hour}:${k.minute}`; };
 const fShort = ms => { const k=kst(ms); return `${+k.month}월 ${+k.day}일 ${k.hour}:${k.minute}`; };
-const fYMD = ms => { const k=kst(ms); return `${k.year}. ${+k.month}. ${+k.day}.`; };
+const fYMD = ms => { const k=kst(ms); return `${k.year}년 ${+k.month}월 ${+k.day}일`; };
+const fYM = ms => { const k=kst(ms); return `${k.year}년 ${+k.month}월`; };
 const fDepth = d => d<1 ? '1 km 미만' : (d<10? d.toFixed(1) : Math.round(d))+' km';
+const depthText = e => e.nod ? '깊이 미상' : '깊이 '+fDepth(e.depth);
+const fHn = h => h<1? h.toFixed(2) : h<10? h.toFixed(1) : String(Math.round(h));
+const fH = h => h==null? '높이 기록 없음' : fHn(h)+' m';
 const agoText = ms => ms<90e3 ? '방금' : fDur(ms)+' 전';
 function fDur(ms){ const m=Math.round(ms/60000); if(m<60) return m+'분'; const h=Math.floor(m/60), r=m%60; return r? `${h}시간 ${r}분` : `${h}시간`; }
 
@@ -561,10 +697,10 @@ function depthRGB(d){
 }
 const css = (c,a=1) => `rgba(${Math.round(c[0]*255)},${Math.round(c[1]*255)},${Math.round(c[2]*255)},${a})`;
 const VOICES=[
-  {name:'지각의 현', range:'0–20 km', desc:'얕은 지진은 줄을 튕기듯 짧고 밝게 울려요.', orch:'하프', odesc:'얕은 지진은 하프 줄을 뜯듯 맑게 울려요.', sdesc:'가까이서 울리듯 또렷하고 밝게 들려요.', depth:8},
-  {name:'맨틀의 종', range:'20–100 km', desc:'중간 깊이는 금속 종처럼 맑게 퍼져요.', orch:'비브라폰', odesc:'중간 깊이는 비브라폰처럼 은은하게 떨려요.', sdesc:'조금 멀리서 울리듯 넓게 퍼져요.', depth:45},
-  {name:'깊은 합창', range:'100–300 km', desc:'더 깊어지면 여러 목소리가 겹친 듯 부드러워져요.', orch:'합창', odesc:'더 깊어지면 합창단이 부드럽게 받아 불러요.', sdesc:'깊은 곳에서 울리듯 부드럽고 길게 남아요.', depth:170},
-  {name:'심연의 고래', range:'300–700 km', desc:'가장 깊은 지진은 고래 울음처럼 낮고 길게 남아요.', orch:'첼로', odesc:'가장 깊은 지진은 첼로가 낮고 길게 그어요.', sdesc:'아주 깊은 곳에서 울리듯 어둡고 길게 남아요.', depth:560}
+  {name:'얕은 지진', syn:'신스 플럭', range:'0–20 km', desc:'얕은 지진은 줄을 튕기듯 짧고 밝게 울립니다.', orch:'하프', odesc:'얕은 지진은 하프 줄을 뜯듯 맑게 울립니다.', sdesc:'가까이서 울리듯 또렷하고 밝게 들립니다.', depth:8},
+  {name:'중간 깊이', syn:'신스 벨', range:'20–100 km', desc:'중간 깊이는 금속 종처럼 맑게 퍼집니다.', orch:'비브라폰', odesc:'중간 깊이는 비브라폰처럼 은은하게 떨립니다.', sdesc:'조금 멀리서 울리듯 넓게 퍼집니다.', depth:45},
+  {name:'깊은 지진', syn:'신스 패드', range:'100–300 km', desc:'더 깊어지면 여러 목소리가 겹친 듯 부드러워집니다.', orch:'합창', odesc:'더 깊어지면 합창이 부드럽게 이어받습니다.', sdesc:'깊은 곳에서 울리듯 부드럽고 길게 남습니다.', depth:170},
+  {name:'아주 깊은 지진', syn:'신스 베이스', range:'300–700 km', desc:'가장 깊은 지진은 낮고 길게 남습니다.', orch:'첼로', odesc:'가장 깊은 지진은 첼로가 낮고 길게 연주합니다.', sdesc:'아주 깊은 곳에서 울리듯 어둡고 길게 남습니다.', depth:560}
 ];
 const voiceOf = d => d<20?0:d<100?1:d<300?2:3;
 const PENTA=[0,3,5,7,10];
@@ -576,44 +712,52 @@ const noteName = n => NOTE[n%12]+(Math.floor(n/12)-1);
 const noteSol = n => SOL[NOTE[n%12][0]];
 const mtof = n => 440*Math.pow(2,(n-69)/12);
 const DEPTH_EXAG=4;
+const eraMidi = m => stepMidi(Math.round(clamp((9.6-m)/2.6,0,1)*14)+4); // 1900+ decades: M7–9.5 spread over the same range
+const TSU_RGB=[0.27,0.94,0.84];
+const tsuI = h => clamp(Math.log10(1+2*(h==null?0.05:h))/2.2,0,1); // NOAA maximum water height → 0 (5 cm) … 1 (100 m)
+const tsuMidi = I => stepMidi(Math.round((1-I)*12)+2);
+const CAUSE=['원인 미상','지진','지진(불확실)','지진·산사태','화산·지진','화산·지진·산사태','화산','화산·산사태','산사태','기상','폭발','조석'];
+const tsuText = w => w.h==null? '쓰나미 기록 있음' : '쓰나미 최대 '+fH(w.h);
+function fTsWhen(w){ const k=kst(w.t), d=`${k.year}년 ${+k.month}월 ${+k.day}일`; return w.approx===0? `${d} ${k.hour}:${k.minute}` : w.approx===1? `${d} ${+k.hour}시경` : w.approx===2? d : w.approx===3? `${k.year}년 ${+k.month}월` : `${k.year}년`; }
+const NOAA_EV='https://www.ngdc.noaa.gov/hazel/view/hazards/tsunami/event-more-info/';
 const magClass = m => m>=8?'GREAT EARTHQUAKE':m>=7?'MAJOR EARTHQUAKE':m>=6?'STRONG EARTHQUAKE':m>=5?'MODERATE EARTHQUAKE':m>=4?'LIGHT EARTHQUAKE':m>=3?'MINOR EARTHQUAKE':'MICRO EARTHQUAKE';
 
 /* ================= Instruments: numbered voices like an arranger keyboard ================= */
 const VMETA = (DATA.voices && DATA.voices.voices) ? DATA.voices : {notes:[],lead:0.12,voices:{}};
 const VOICE_LIST=[
-  {no:0,  key:'orch',     en:'EARTH ORCH',   ko:'지구 오케스트라', fam:'오케스트라', desc:'깊이마다 악기가 달라요. 얕은 지진은 하프, 중간은 비브라폰, 깊어지면 합창과 첼로가 받아요.'},
-  {no:1,  key:'piano',    en:'GRAND PIANO',  ko:'그랜드 피아노', fam:'건반', desc:'지진 하나하나가 건반 하나예요. 가장 익숙하고 맑은 소리.'},
-  {no:2,  key:'epiano',   en:'E.PIANO',      ko:'일렉트릭 피아노', short:'일렉 피아노', fam:'건반', desc:'로즈 피아노처럼 둥글고 따뜻하게 울려요.'},
-  {no:3,  key:'harpsi',   en:'CEMBALO',      ko:'쳄발로', fam:'건반', desc:'하프시코드라고도 불러요. 바로크 시대 건반으로, 줄을 뜯어 찰랑찰랑 울려요.'},
-  {no:4,  key:'organ',    en:'PIPE ORGAN',   ko:'파이프 오르간', fam:'건반', desc:'성당의 파이프 오르간처럼 꽉 차게 이어져요.'},
-  {no:5,  key:'celesta',  en:'CELESTA',      ko:'첼레스타', fam:'말렛·벨', desc:'호두까기 인형의 사탕 요정 춤에 나오는 반짝이는 소리예요.'},
-  {no:6,  key:'musicbox', en:'MUSIC BOX',    ko:'오르골', fam:'말렛·벨', desc:'태엽 오르골처럼 작고 맑게 울려요.'},
-  {no:7,  key:'vibes',    en:'VIBRAPHONE',   ko:'비브라폰', fam:'말렛·벨', desc:'금속 건반이 은은하게 떨리며 오래 남아요.'},
-  {no:8,  key:'marimba',  en:'MARIMBA',      ko:'마림바', fam:'말렛·벨', desc:'나무 건반을 두드리는 통통 튀는 소리예요.'},
-  {no:9,  key:'bells',    en:'CHIMES',       ko:'차임벨', fam:'말렛·벨', desc:'튜블러 벨이라고도 해요. 교회 종처럼 크고 길게 울려요.'},
-  {no:10, key:'kalimba',  en:'KALIMBA',      ko:'칼림바', fam:'말렛·벨', desc:'엄지로 쇠막대를 튕기는 아프리카 악기의 포근한 소리예요.'},
-  {no:11, key:'guitar',   en:'NYLON GUITAR', ko:'클래식 기타', fam:'현악기', desc:'나일론 줄을 손가락으로 뜯는 소리예요.'},
-  {no:12, key:'harp',     en:'HARP',         ko:'하프', fam:'현악기', desc:'물결처럼 흐르는 하프 줄 소리예요.'},
-  {no:13, key:'strings',  en:'STRINGS',      ko:'현악 합주', fam:'현악기', desc:'바이올린부터 콘트라베이스까지 현악기들이 함께 감싸요.'},
-  {no:14, key:'cello',    en:'CELLO',        ko:'첼로', fam:'현악기', desc:'낮고 깊은 활 소리예요. 깊은 지진과 특히 잘 어울려요.'},
-  {no:15, key:'brass',    en:'BRASS',        ko:'브라스', fam:'관악기·목소리', desc:'트럼펫·트롬본·호른이 함께 부는 힘찬 소리예요.'},
-  {no:16, key:'trumpet',  en:'TRUMPET',      ko:'트럼펫', fam:'관악기·목소리', desc:'팡파르처럼 또렷하게 울려요.'},
-  {no:17, key:'flute',    en:'FLUTE',        ko:'플루트', fam:'관악기·목소리', desc:'숨결이 섞인 가볍고 맑은 소리예요.'},
-  {no:18, key:'choir',    en:'CHOIR AAHS',   ko:'합창', fam:'관악기·목소리', desc:'여러 목소리가 "아-" 하고 노래해요.'},
-  {no:99, key:'synth',    en:'SPACE SYNTH',  ko:'우주 신스', fam:'전자음', desc:'처음 들려드린 전자음이에요. 깊이마다 신스 음색이 달라져요. 박자도 "전자 킥"으로 바꾸면 처음 소리 그대로예요.'}
+  {no:0,  key:'orch',     en:'ORCHESTRA',    ko:'오케스트라', fam:'오케스트라', desc:'깊이마다 악기가 다릅니다. 얕은 지진은 하프, 중간 깊이는 비브라폰, 깊은 지진은 합창과 첼로가 연주합니다.'},
+  {no:1,  key:'piano',    en:'GRAND PIANO',  ko:'그랜드 피아노', fam:'건반', desc:'지진 하나하나가 건반 하나입니다. 가장 익숙하고 맑은 소리입니다.'},
+  {no:2,  key:'epiano',   en:'E.PIANO',      ko:'일렉트릭 피아노', short:'일렉 피아노', fam:'건반', desc:'로즈 피아노처럼 둥글고 따뜻하게 울립니다.'},
+  {no:3,  key:'harpsi',   en:'CEMBALO',      ko:'쳄발로', fam:'건반', desc:'하프시코드라고도 부릅니다. 줄을 뜯어 소리를 내는 바로크 시대의 건반 악기입니다.'},
+  {no:4,  key:'organ',    en:'PIPE ORGAN',   ko:'파이프 오르간', fam:'건반', desc:'성당의 파이프 오르간처럼 소리가 길게 이어집니다.'},
+  {no:5,  key:'celesta',  en:'CELESTA',      ko:'첼레스타', fam:'말렛·벨', desc:'차이콥스키의 「호두까기 인형」 중 사탕 요정의 춤에 나오는 맑은 건반 소리입니다.'},
+  {no:6,  key:'musicbox', en:'MUSIC BOX',    ko:'오르골', fam:'말렛·벨', desc:'태엽 오르골처럼 작고 맑게 울립니다.'},
+  {no:7,  key:'vibes',    en:'VIBRAPHONE',   ko:'비브라폰', fam:'말렛·벨', desc:'금속 건반이 은은하게 떨리며 오래 남습니다.'},
+  {no:8,  key:'marimba',  en:'MARIMBA',      ko:'마림바', fam:'말렛·벨', desc:'나무 건반을 두드리는 소리입니다.'},
+  {no:9,  key:'bells',    en:'CHIMES',       ko:'차임벨', fam:'말렛·벨', desc:'튜블러 벨이라고도 합니다. 교회 종처럼 크고 길게 울립니다.'},
+  {no:10, key:'kalimba',  en:'KALIMBA',      ko:'칼림바', fam:'말렛·벨', desc:'엄지로 금속 막대를 튕겨 소리를 내는 아프리카 악기입니다.'},
+  {no:11, key:'guitar',   en:'NYLON GUITAR', ko:'클래식 기타', fam:'현악기', desc:'나일론 줄을 손가락으로 뜯는 소리입니다.'},
+  {no:12, key:'harp',     en:'HARP',         ko:'하프', fam:'현악기', desc:'하프 줄을 뜯는 소리입니다.'},
+  {no:13, key:'strings',  en:'STRINGS',      ko:'현악 합주', fam:'현악기', desc:'바이올린부터 콘트라베이스까지 현악기가 함께 연주합니다.'},
+  {no:14, key:'cello',    en:'CELLO',        ko:'첼로', fam:'현악기', desc:'낮고 깊은 활 소리입니다. 깊은 지진과 잘 어울립니다.'},
+  {no:15, key:'brass',    en:'BRASS',        ko:'브라스', fam:'관악기·목소리', desc:'트럼펫, 트롬본, 호른이 함께 부는 소리입니다.'},
+  {no:16, key:'trumpet',  en:'TRUMPET',      ko:'트럼펫', fam:'관악기·목소리', desc:'트럼펫 한 대의 또렷한 소리입니다.'},
+  {no:17, key:'flute',    en:'FLUTE',        ko:'플루트', fam:'관악기·목소리', desc:'숨결이 섞인 가볍고 맑은 소리입니다.'},
+  {no:18, key:'choir',    en:'CHOIR AAHS',   ko:'합창', fam:'관악기·목소리', desc:'여러 사람이 "아" 하고 부르는 합창 소리입니다.'},
+  {no:99, key:'synth',    en:'SYNTH',        ko:'신시사이저', fam:'전자음', desc:'깊이마다 음색이 다른 전자음입니다. 박자를 "전자 킥"으로 바꾸면 이 사이트의 처음 소리와 같습니다.'}
 ];
 const ORCH=['harp','vibes','choir','cello'];
 const BEATS=[
-  {key:'soft',    en:'HEART',   ko:'청진기 심장', desc:'청진기로 듣는 것처럼 둥근 심장 소리'},
-  {key:'timpani', en:'TIMPANI', ko:'팀파니', desc:'오케스트라의 큰북으로 쿵-쿵'},
-  {key:'bass',    en:'C.BASS',  ko:'콘트라베이스', desc:'낮은 줄을 뜯어 둥-둥'},
-  {key:'synth',   en:'E.KICK',  ko:'전자 킥', desc:'처음 들려드린 전자음 심장'},
-  {key:'off',     en:'NO BEAT', ko:'박자 끄기', desc:'지진 소리만 들어요'}
+  {key:'soft',    en:'HEART',   ko:'심장 박동', desc:'청진기로 듣는 듯한 둥근 심장 소리'},
+  {key:'timpani', en:'TIMPANI', ko:'팀파니', desc:'오케스트라의 큰북'},
+  {key:'bass',    en:'C.BASS',  ko:'콘트라베이스', desc:'콘트라베이스의 낮은 줄'},
+  {key:'synth',   en:'E.KICK',  ko:'전자 킥', desc:'처음 버전의 전자음 심장 소리'},
+  {key:'off',     en:'NO BEAT', ko:'박자 끄기', desc:'지진 소리만 듣기'}
 ];
 // demo phrase in A minor pentatonic: [midi, seconds from start, magnitude]
 const DEMO=[[57,0,3.6],[60,.24,3.2],[62,.48,3.3],[64,.72,3.5],[67,1.0,3.9],[64,1.48,3.2],[62,1.72,3.1],[60,1.96,3.3],[62,2.4,3.2],[57,2.64,3.6],[45,3.1,4.6],[69,3.1,3.0]];
 const pad3 = n => String(n).padStart(3,'0');
-function voiceLabel(e){ const k=Voice.cur.key; return k==='synth'? VOICES[e.voice].name : k==='orch'? VOICES[e.voice].orch : Voice.cur.ko; }
+function voiceLabel(e){ const k=Voice.cur.key; return k==='synth'? VOICES[e.voice].syn : k==='orch'? VOICES[e.voice].orch : Voice.cur.ko; }
 
 function latLonToVec(lat,lon,r){
   const phi=(90-lat)*DEG, th=(lon+180)*DEG;
@@ -632,81 +776,88 @@ function haversine(a,b,c,d){ const R=6371, x=(c-a)*DEG, y=(d-b)*DEG; const h=Mat
 
 /* ================= Scenes ================= */
 const LEAD=1.4, TAIL=4;
-const warp = g => clamp(0.55*Math.log1p(g/45000), 0.06, 3.2);
+// how a scene's real time folds into playback: gaps shrink on a log scale, and a decade of M7+ quakes folds far more than a day does
+const KIND={
+  std:{gap:45000,gk:0.55,gmin:0.06,gmax:3.2,pad:90000,win:3600e3,moff:0,th:{boom:5.2,gong:6,aura:7,crack:7.5},great:[6.4,9.0],alert:7,capGreat:7.5,tag:null},
+  era:{gap:6*3600e3,gk:0.38,gmin:0.15,gmax:1.6,pad:30*86400e3,win:30*86400e3,moff:2,th:{boom:7.6,gong:8,aura:8.5,crack:9},great:[8.0,9.5],alert:8.5,capGreat:8.5,tag:7.5}
+};
+const warp = (g,P) => clamp(P.gk*Math.log1p(g/P.gap), P.gmin, P.gmax);
 const SCENES = DATA.scenes;
+const PK = () => (Player.s && Player.s.P) || KIND.std;
 function prepare(s){
   if(s.prepared) return s;
-  const t0=s.t0*1000;
+  const era=s.kind==='era', P=s.P=era? KIND.era : KIND.std, t0=s.t0*1000;
   s.events = s.ev.map((a,i)=>{
-    const d=Math.max(0,a[3]);
-    const e={i, t:t0+a[0]*1000, lat:a[1], lon:a[2], depth:d, mag:a[4], id:a[5], place:a[6]};
-    e.ko=koPlace(e.place); e.vec=latLonToVec(e.lat,e.lon,1); e.rgb=depthRGB(d); e.midi=magMidi(e.mag); e.voice=voiceOf(d);
+    const nod=a[3]==null, d=nod? 15 : Math.max(0,a[3]); // a few early-1900s records have no depth: they sound and look like a shallow quake
+    const e={i, t:t0+a[0]*1000, lat:a[1], lon:a[2], depth:d, nod, mag:a[4], id:a[5], place:a[6]};
+    e.vm=Math.max(0,e.mag-P.moff); // the size the sound and picture use: a decade of M7+ is drawn two steps smaller
+    e.ko=koPlace(e.place); e.vec=latLonToVec(e.lat,e.lon,1); e.rgb=depthRGB(d); e.midi=era? eraMidi(e.mag) : magMidi(e.mag); e.voice=voiceOf(d);
     e.dr=1-(Math.min(d,700)/6371)*DEPTH_EXAG;
     return e;
   });
-  const ev=s.events, n=ev.length;
-  s.r=new Float64Array(n); let acc=LEAD;
-  for(let i=0;i<n;i++){ if(i) acc+=warp(ev[i].t-ev[i-1].t); s.r[i]=acc; }
-  s.total=acc+TAIL; s.tStart=ev[0].t; s.tEnd=ev[n-1].t;
+  const ev=s.events, n=ev.length, byId=new Map(ev.map(e=>[e.id,e]));
+  // NOAA tsunamis: one paired with a quake rings right after that quake; one without a partner keeps its own moment on the timeline
+  const ts=(s.ts||[]).map(a=>({kind:'tsu', t:a[0]*1000, lat:a[1], lon:a[2], h:a[3], runups:a[4]||0, id:a[5], cause:a[6], ko:a[7], en:a[8], eqmag:a[9], approx:a[10], link:a[11]||null}));
+  const free0=ts.find(w=>!(w.link && byId.has(w.link)));
+  let acc=LEAD+(free0 && free0.t<ev[0].t ? Math.min(6,(ev[0].t-free0.t)/P.pad) : 0);
+  s.r=new Float64Array(n);
+  for(let i=0;i<n;i++){ if(i) acc+=warp(ev[i].t-ev[i-1].t,P); s.r[i]=acc; }
+  s.tStart=ev[0].t; s.tEnd=ev[n-1].t;
+  s.tsAll=[]; s.tsFree=[];
+  for(const w of ts){
+    w.vec=latLonToVec(w.lat,w.lon,1); w.I=tsuI(w.h); w.rgb=TSU_RGB; w.midi=tsuMidi(w.I); w.dr=1;
+    const q=w.link && byId.get(w.link);
+    if(q){ q.tsu=w; w.q=q; } else { w.p=pAtReal(s,w.t); w.j=s.tsFree.length; s.tsFree.push(w); }
+    s.tsAll.push(w);
+  }
+  const tf=s.tsFree;
+  s.total=Math.max(acc, tf.length? tf[tf.length-1].p : 0)+TAIL;
+  s.tFirst=Math.min(s.tStart, tf.length? tf[0].t : Infinity); s.tLast=Math.max(s.tEnd, tf.length? tf[tf.length-1].t : -Infinity);
   s.magMin=Math.min(...ev.map(e=>e.mag)); s.magMax=Math.max(...ev.map(e=>e.mag));
   s.maxEv=ev.reduce((a,b)=>b.mag>a.mag?b:a);
-  if(s.kind==='now') s.highlights={[s.maxEv.id]:`오늘 가장 큰 박동 · ${s.maxEv.ko.region||s.maxEv.ko.main} M${s.maxEv.mag.toFixed(1)}`};
+  if(s.kind==='now') s.highlights={[s.maxEv.id]:`오늘 가장 큰 지진 · ${s.maxEv.ko.region||s.maxEv.ko.main} M${s.maxEv.mag.toFixed(1)}`};
+  if(era){ s.highlights={}; for(const e of ev) if(e.mag>=8) s.highlights[e.id]=`${quakeName(e)} · M${e.mag.toFixed(1)}`; }
   for(const e of ev) e.hl = (s.highlights && s.highlights[e.id]) || null;
-  s.ringThr=Math.min(4.5, s.magMax-1.6);
+  s.ringThr= era? 7.5 : Math.min(4.5, s.magMax-1.6);
+  s.tagThr= P.tag!=null? P.tag : s.ringThr-1;
   // focus direction: magnitude-weighted centroid
   let fx=0,fy=0,fz=0; for(const e of ev){ const w=Math.pow(3,e.mag); fx+=e.vec.x*w; fy+=e.vec.y*w; fz+=e.vec.z*w; }
   const fl=Math.hypot(fx,fy,fz)||1; s.focus={x:fx/fl,y:fy/fl,z:fz/fl};
   s.prepared=true;
-  s.diary=buildDiary(s);
   return s;
+}
+function quakeName(e){
+  if(e.ko.named) return e.ko.main;
+  if(NAMED_ID[e.id]) return NAMED_ID[e.id];
+  return `${kst(e.t).year}년 ${(e.ko.region||e.ko.main).replace(/ 부근$/,'')} 지진`;
+}
+function eraBlurb(s){
+  const max=s.maxEv, nts=s.tsAll.length;
+  return `${s.date}에 전 세계에서 일어난 규모 7 이상 지진 ${s.events.length}건${s.tsMissing? '' : `과 NOAA에 기록된 쓰나미 ${nts}건`}을 시간 순서대로 들려 드립니다. `
+    +`가장 큰 지진은 규모 ${max.mag.toFixed(1)}의 ${quakeName(max).replace(/ \(.+\)$/,'')}입니다.`+(s.tsMissing? ' 이 연대의 쓰나미 기록은 아직 넣지 못했습니다.' : '');
 }
 function idxAtOrBefore(s,t){ let lo=0,hi=s.events.length-1,ans=-1; while(lo<=hi){ const m=(lo+hi)>>1; if(s.events[m].t<=t){ans=m;lo=m+1;} else hi=m-1; } return ans; }
 function realAt(s,p){
-  const r=s.r, ev=s.events, n=ev.length;
-  if(p<=r[0]) return ev[0].t-(r[0]-p)*90000;
-  if(p>=r[n-1]) return ev[n-1].t+(p-r[n-1])*90000;
+  const r=s.r, ev=s.events, n=ev.length, pad=s.P.pad;
+  if(p<=r[0]) return ev[0].t-(r[0]-p)*pad;
+  if(p>=r[n-1]) return ev[n-1].t+(p-r[n-1])*pad;
   let lo=0,hi=n-2; while(lo<hi){ const m=(lo+hi+1)>>1; if(r[m]<=p) lo=m; else hi=m-1; }
   const f=(p-r[lo])/(r[lo+1]-r[lo]); return ev[lo].t+f*(ev[lo+1].t-ev[lo].t);
 }
 function pAtReal(s,t){
-  const ev=s.events, r=s.r, n=ev.length;
-  if(t<=ev[0].t) return Math.max(0,r[0]-(ev[0].t-t)/90000);
-  if(t>=ev[n-1].t) return r[n-1];
+  const ev=s.events, r=s.r, n=ev.length, pad=s.P.pad;
+  if(t<=ev[0].t) return Math.max(0,r[0]-(ev[0].t-t)/pad);
+  if(t>=ev[n-1].t) return r[n-1]+(t-ev[n-1].t)/pad;
   const i=idxAtOrBefore(s,t); const f=(t-ev[i].t)/Math.max(1,ev[i+1].t-ev[i].t); return r[i]+f*(r[i+1]-r[i]);
 }
 function activityAt(s,t){
-  let a=0; for(let i=idxAtOrBefore(s,t); i>=0 && s.events[i].t>t-3600e3; i--){ a+=0.6+0.35*Math.max(0,s.events[i].mag-2); }
+  const ev=s.events, win=s.P.win; let a=0;
+  for(let i=idxAtOrBefore(s,t); i>=0 && ev[i].t>t-win; i--){ a+=0.6+0.35*Math.max(0,ev[i].vm-2); }
   return a;
 }
 const bpmFor = a => clamp(56+9*Math.sqrt(a), 54, 150);
 const adrFor = m => m>4.5 ? 6*Math.pow(m-4.5,1.2) : 0;
-const moodOf = b => b<68?'평온해요':b<90?'두근거려요':b<120?'빨라졌어요':'요동쳐요';
-
-function buildDiary(s){
-  const ev=s.events, n=ev.length, out=[];
-  const max=s.maxEv, deep=ev.reduce((a,b)=>b.depth>a.depth?b:a);
-  let best=0,bi=0,j=0; for(let i=0;i<n;i++){ while(ev[i].t-ev[j].t>3600e3) j++; if(i-j+1>best){best=i-j+1;bi=i;} }
-  const busyStart=ev[bi].t-3600e3;
-  const groups=new Map();
-  for(const e of ev){ const k = s.kind==='now' ? (e.ko.town? (e.ko.region? e.ko.region+' '+e.ko.town : e.ko.town) : e.ko.main) : (e.ko.region || e.ko.main); groups.set(k,(groups.get(k)||0)+1); }
-  let topK='',topN=0; for(const [k,v] of groups) if(v>topN){topN=v;topK=k;}
-  let peak=0, peakEv=ev[0];
-  for(const e of ev){ const b=Math.min(178,bpmFor(activityAt(s,e.t))+adrFor(e.mag)); if(b>peak){peak=b;peakEv=e;} }
-  const mags=ev.map(e=>e.mag).sort((a,b)=>a-b);
-  if(s.kind==='now') out.push({head:`지난 24시간 동안 지구는 <b>${n}</b>번 떨렸어요.`});
-  else if(s.kind==='week') out.push({head:`최근 7일, 규모 4.5 이상만 <b>${n}</b>번 있었어요.`});
-  else out.push({head:`${s.date} 전후, 규모 ${mags[0].toFixed(1)} 이상만 <b>${n}</b>번 기록됐어요.`});
-  out.push({k:'가장 크게 뛴 순간', v:`<b>M${max.mag.toFixed(1)}</b> · ${max.ko.main}<br><span style="color:var(--ink-3)">${fShort(max.t)}</span>`, e:max});
-  out.push({k:'가장 깊은 울림', v:`<b>${fDepth(deep.depth)}</b> 아래 · ${deep.ko.main}`, e:deep});
-  out.push({k:'가장 바빴던 한 시간', v:`${fShort(busyStart)}부터 한 시간 동안 <b>${best}</b>번`, e:ev[bi-best+1]||ev[bi]});
-  out.push({k:'가장 수다스러운 곳', v:`${topK} · <b>${topN}</b>번`});
-  out.push({k:'최고 심박', v:`<b>${Math.round(peak)}</b> BPM · ${fShort(peakEv.t)}`, e:peakEv});
-  if(s.kind!=='now'){
-    const after=ev.filter(e=>e!==max && e.t>max.t && e.t<=max.t+3600e3 && haversine(e.lat,e.lon,max.lat,max.lon)<700).length;
-    out.push({k:'가장 큰 지진 뒤 한 시간', v:`근처에서 여진 <b>${after}</b>번`});
-  }
-  return out;
-}
+const moodOf = b => b<68?'평상시':b<90?'활발':b<120?'매우 활발':'격렬';
 
 /* ================= Audio ================= */
 const Sound = {
@@ -805,8 +956,8 @@ const Sound = {
   },
   quake(e,t,opt){
     if(!this.ready || this.voices>44) return;
-    const ctx=this.ctx, m=e.mag, f=mtof(e.midi), v=e.voice, far=opt.far||0;
-    const amp=clamp(0.05+0.5*Math.pow(clamp((m+1)/10.5,0,1),1.6),0.035,0.62)*(opt.gain||1);
+    const ctx=this.ctx, m=e.mag, vm=e.vm!=null? e.vm : m, P=opt.P||KIND.std, f=mtof(e.midi), v=e.voice, far=opt.far||0;
+    const amp=clamp(0.05+0.5*Math.pow(clamp((vm+1)/10.5,0,1),1.6),0.035,0.62)*(opt.gain||1);
     const nodes=[];
     const out=ctx.createGain(); const muff=ctx.createBiquadFilter(); muff.type='lowpass'; muff.frequency.value=lerp(16000,650,far); muff.Q.value=0.5;
     out.connect(muff); let tail=muff;
@@ -817,10 +968,10 @@ const Sound = {
     const ds=ctx.createGain(); ds.gain.value=(syn?[0.22,0.14,0.06,0.04]:[0.07,0.05,0.03,0.02])[v]; tail.connect(ds); ds.connect(this.dlyIn);
     nodes.push(out,muff,rs,ds);
     // a sampled instrument when one is chosen and loaded; the synth voices otherwise (and as a fallback)
-    let end= S ? this.sample(out,S,e.midi,amp,t,m,v) : [this.pluck,this.bell,this.choir,this.abyss][v].call(this,out,f,amp,t,m);
-    if(m>=5.2) end=Math.max(end,this.boom(amp,t,m,e));
-    if(m>=7) end=Math.max(end,this.aura(t,m));
-    if(m>=7.5) this.crack(t,m);
+    let end= S ? this.sample(out,S,e.midi,amp,t,vm,v) : [this.pluck,this.bell,this.choir,this.abyss][v].call(this,out,f,amp,t,vm);
+    if(m>=P.th.boom) end=Math.max(end,this.boom(amp,t,vm,e,m>=P.th.gong));
+    if(m>=P.th.aura) end=Math.max(end,this.aura(t));
+    if(m>=P.th.crack) this.crack(t,7.5+(m-P.th.crack));
     this.voices++;
     setTimeout(()=>{ this.voices--; for(const n of nodes){ try{ n.disconnect(); }catch(_){ } } }, Math.max(0,(end-ctx.currentTime)*1000)+600);
     return end;
@@ -878,12 +1029,12 @@ const Sound = {
     o1.connect(lp); o2.connect(g2); g2.connect(lp); o3.connect(g3); g3.connect(lp); lp.connect(g); g.connect(out);
     return t+dur;
   },
-  boom(amp,t,m,e){
+  boom(amp,t,m,e,gong){
     const ctx=this.ctx, dur=2.2+0.55*(m-5), stop=t+dur+0.1, a=Math.min(0.85,amp*1.35);
     const n=ctx.createBufferSource(); n.buffer=this.noise; n.loop=true; const lp=ctx.createBiquadFilter(); lp.type='lowpass'; lp.frequency.setValueAtTime(280,t); lp.frequency.exponentialRampToValueAtTime(55,t+dur);
     const g=ctx.createGain(); this.env(g.gain,t,0.02,a,t+dur); n.connect(lp); lp.connect(g); g.connect(this.dry); n.start(t); n.stop(stop);
     const o=this.osc('sine',58,t,stop); o.frequency.setValueAtTime(60,t); o.frequency.exponentialRampToValueAtTime(26,t+dur*0.8); const og=ctx.createGain(); this.env(og.gain,t,0.015,a*0.9,t+dur); o.connect(og); og.connect(this.dry);
-    if(m>=6){ // gong
+    if(gong){
       const gf=mtof(e.midi-12), gd=dur+3, car=this.osc('sine',gf,t,t+gd), mod=this.osc('sine',gf*1.41,t,t+gd), mg=ctx.createGain();
       mg.gain.setValueAtTime(gf*7,t); mg.gain.exponentialRampToValueAtTime(gf*0.2,t+gd); mod.connect(mg); mg.connect(car.frequency);
       const gg=ctx.createGain(); this.env(gg.gain,t,0.01,a*0.5,t+gd); car.connect(gg); gg.connect(this.dry); const gs=ctx.createGain(); gs.gain.value=0.8; gg.connect(gs); gs.connect(this.revIn);
@@ -896,7 +1047,7 @@ const Sound = {
     const g=ctx.createGain(), a=Math.min(0.5,0.2+(m-7.5)*0.15); g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(a,t+0.008); g.gain.exponentialRampToValueAtTime(0.0001,t+1.1);
     n.connect(bp); bp.connect(g); g.connect(this.dry); const r=ctx.createGain(); r.gain.value=0.9; g.connect(r); r.connect(this.revIn); n.start(t,Math.random()); n.stop(t+1.2);
   },
-  aura(t,m){ // the air after a great quake: noise shimmer + a high open chord
+  aura(t){ // the air after a great quake: noise shimmer + a high open chord
     const ctx=this.ctx, dur=7, stop=t+dur+0.1;
     const n=ctx.createBufferSource(); n.buffer=this.noise; n.loop=true; const hp=ctx.createBiquadFilter(); hp.type='highpass'; hp.frequency.value=4200;
     const g=ctx.createGain(); g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(0.06,t+1.4); g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
@@ -909,15 +1060,30 @@ const Sound = {
     if(ctx.createStereoPanner){ const pn=ctx.createStereoPanner(); pn.pan.value=clamp(pan||0,-0.9,0.9); pn.connect(this.dry); out=pn; }
     [[1318.5,0],[1975.5,0.1]].forEach(([f,d])=>{ const tt=t+d, o=this.osc('sine',f,tt,tt+0.7), g=ctx.createGain(); this.env(g.gain,tt,0.004,0.07,tt+0.65); o.connect(g); g.connect(out); const r=ctx.createGain(); r.gain.value=0.7; g.connect(r); r.connect(this.revIn); });
   },
-  motif(e,t){ // your adopted region's three-note call, played on the chosen instrument (a music box for the orchestra)
-    const ctx=this.ctx, k=magStep(e.mag), key=Voice.cur.key, S=key==='synth'? null : Samples.get(key==='orch'?'musicbox':key);
-    [5,7,10].forEach((d,j)=>{
-      const n=Math.min(98,stepMidi(k+d)), f=mtof(n), tt=t+0.12*j+0.08;
-      const g=ctx.createGain(); g.connect(this.dry); const s=ctx.createGain(); s.gain.value=0.5; g.connect(s); s.connect(this.revIn); s.connect(this.dlyIn);
-      if(S){ this.sample(g,S,n,0.2,tt,3,0,{dur:1.3}); return; }
-      const o=this.osc('sine',f,tt,tt+1.3), o2=this.osc('sine',f*4,tt,tt+1.3), ge=ctx.createGain(), g2=ctx.createGain(); g2.gain.value=0.16;
-      this.env(ge.gain,tt,0.005,0.14,tt+1.2); o.connect(ge); o2.connect(g2); g2.connect(ge); ge.connect(g);
-    });
+  // a tsunami: a swell of filtered noise that rises and draws back, surf at the crest, and a deep tone under it.
+  // Higher waves (NOAA's maximum water height) are louder, longer and lower; more run-up sites spread the echo wider.
+  tsunami(w,t,opt){
+    if(!this.ready || this.voices>44) return t;
+    const ctx=this.ctx, I=w.I, far=opt.far||0, amp=(0.07+0.42*I)*(opt.gain||1), dur=2.6+6.5*I, att=0.5+1.4*I, stop=t+dur+0.2;
+    const out=ctx.createGain(), muff=ctx.createBiquadFilter(); muff.type='lowpass'; muff.frequency.value=lerp(16000,900,far); muff.Q.value=0.5;
+    out.connect(muff); let tail=muff; const nodes=[out,muff];
+    if(ctx.createStereoPanner){ const pn=ctx.createStereoPanner(); pn.pan.value=clamp(opt.pan||0,-0.95,0.95); muff.connect(pn); tail=pn; nodes.push(pn); }
+    tail.connect(this.dry);
+    const rs=ctx.createGain(); rs.gain.value=0.35+0.45*clamp(Math.log10(1+(w.runups||0))/3,0,1); tail.connect(rs); rs.connect(this.revIn); nodes.push(rs);
+    const n=ctx.createBufferSource(); n.buffer=this.noise; n.loop=true;
+    const lp=ctx.createBiquadFilter(); lp.type='lowpass'; lp.Q.value=0.7; lp.frequency.setValueAtTime(140,t); lp.frequency.exponentialRampToValueAtTime(420+1600*I,t+att); lp.frequency.exponentialRampToValueAtTime(160,t+dur);
+    const g=ctx.createGain(); g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(amp,t+att); g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+    n.connect(lp); lp.connect(g); g.connect(out); n.start(t,Math.random()*1.5); n.stop(stop);
+    const h=ctx.createBufferSource(); h.buffer=this.noise; h.loop=true; const hp=ctx.createBiquadFilter(); hp.type='highpass'; hp.frequency.value=2500;
+    const hg=ctx.createGain(); hg.gain.setValueAtTime(0.0001,t); hg.gain.setValueAtTime(0.0001,t+att*0.6); hg.gain.exponentialRampToValueAtTime(amp*0.22,t+att*1.1); hg.gain.exponentialRampToValueAtTime(0.0001,t+att*1.1+dur*0.45);
+    h.connect(hp); hp.connect(hg); hg.connect(out); h.start(t,Math.random()*1.5); h.stop(stop);
+    const f=mtof(w.midi), o=this.osc('sine',f,t,stop), o2=this.osc('triangle',f*1.5,t,stop), og=ctx.createGain(), o2g=ctx.createGain(); o2g.gain.value=0.18;
+    o.frequency.setValueAtTime(f*1.06,t); o.frequency.exponentialRampToValueAtTime(f,t+att);
+    og.gain.setValueAtTime(0.0001,t); og.gain.exponentialRampToValueAtTime(amp*0.55,t+att*1.2); og.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+    o.connect(og); o2.connect(o2g); o2g.connect(og); og.connect(out);
+    this.voices++;
+    setTimeout(()=>{ this.voices--; for(const x of nodes){ try{ x.disconnect(); }catch(_){ } } }, Math.max(0,(stop-ctx.currentTime)*1000)+600);
+    return t+dur;
   }
 };
 
@@ -973,7 +1139,7 @@ const Voice={
   beat: BEATS.some(b=>b.key===store.get('beat','soft')) ? store.get('beat','soft') : 'soft',
   get cur(){ return VOICE_LIST[this.i]; },
   keyFor(depthClass){ const k=this.cur.key; return k==='orch'? ORCH[depthClass] : k; },
-  keys(){ const k=this.cur.key, out= k==='synth'? [] : k==='orch'? [...ORCH,'musicbox'] : [k]; if(this.beat==='timpani'||this.beat==='bass') out.push(this.beat); return out; },
+  keys(){ const k=this.cur.key, out= k==='synth'? [] : k==='orch'? [...ORCH] : [k]; if(this.beat==='timpani'||this.beat==='bass') out.push(this.beat); return out; },
   set(i,quiet){ this.i=(i+VOICE_LIST.length)%VOICE_LIST.length; store.set('voice',this.cur.key); Samples.want(this.keys()); UI.onVoice(); if(!quiet) this.preview(); },
   step(d){ ensureStarted(true); this.set(this.i+d); },
   setBeat(k){ this.beat=k; store.set('beat',k); Samples.want(this.keys()); UI.onVoice(); },
@@ -994,10 +1160,10 @@ const Voice={
 
 /* ================= 3D ================= */
 const RIP_N=16;
-let renderer,scene,camera,controls,composer,bloom,finalPass,ocean,dots,quakePts,atmo,core,coreGlow,shell,stars,heartTex,adoptGroup,raycaster,corona,specTex;
+let renderer,scene,camera,controls,composer,bloom,finalPass,ocean,dots,quakePts,atmo,core,coreGlow,shell,stars,corona,specTex;
 const U={};
 let baseDist=4.2;
-const pools={beams:[],rings:[],hearts:[],arcs:[]};
+const pools={beams:[],rings:[],arcs:[]};
 
 const FinalShader={
   uniforms:{tDiffuse:{value:null},uTime:{value:0},uAberr:{value:0.0015},uVig:{value:0.55},uAspect:{value:1},uFPos:{value:null},uFCol:{value:null},uFlash:{value:0},uShockT:{value:99},uShockA:{value:0},uAlert:{value:0}},
@@ -1017,7 +1183,7 @@ const FinalShader={
 };
 const RIPPLE_GLSL=`
 uniform vec4 uRip[${RIP_N}];uniform vec4 uRipP[${RIP_N}];uniform vec3 uRipC[${RIP_N}];uniform float uTime;
-void ripple(vec3 n,float thin,out float glow,out vec3 col){
+void ripple(vec3 n,float thin,float sea,out float glow,out vec3 col){
   glow=0.0;col=vec3(0.0);
   for(int i=0;i<${RIP_N};i++){
     vec4 R=uRip[i];vec4 P=uRipP[i];float age=uTime-R.w;
@@ -1025,7 +1191,10 @@ void ripple(vec3 n,float thin,out float glow,out vec3 col){
     float ang=acos(clamp(dot(n,R.xyz),-1.0,1.0));
     float k=(ang-age*P.x)/(P.y*thin);
     float fade=1.0-age/P.z;
-    float g=(exp(-k*k)*fade*fade+exp(-ang/min(P.y*0.9,0.07))*exp(-age*1.6)*0.9)*P.w;
+    float g;
+    if(P.w<0.0){ // a tsunami (negative weight): a train of crests that runs over the sea only, with no flash at the centre
+      g=(exp(-k*k)+0.6*exp(-(k+2.4)*(k+2.4))+0.3*exp(-(k+4.8)*(k+4.8)))*fade*(-P.w)*sea;
+    } else g=(exp(-k*k)*fade*fade+exp(-ang/min(P.y*0.9,0.07))*exp(-age*1.6)*0.9)*P.w;
     glow+=g;col+=uRipC[i]*g;
   }
   if(glow>0.0001) col/=glow;
@@ -1042,11 +1211,10 @@ function initGL(){
   camera=new THREE.PerspectiveCamera(36,1,0.05,300); camera.position.set(0,1.2,4.4);
   controls=new THREE.OrbitControls(camera,canvas);
   Object.assign(controls,{enableDamping:true,dampingFactor:0.07,enablePan:false,rotateSpeed:0.5,zoomSpeed:0.7,minDistance:1.5,maxDistance:10});
-  raycaster=new THREE.Raycaster();
   const rip=[],ripP=[],ripC=[];
   for(let i=0;i<RIP_N;i++){ rip.push(new THREE.Vector4(0,1,0,-1e4)); ripP.push(new THREE.Vector4(0.1,0.05,1,0)); ripC.push(new THREE.Vector3(1,1,1)); }
   Object.assign(U,{uTime:{value:100},uRip:{value:rip},uRipP:{value:ripP},uRipC:{value:ripC},uXray:{value:0},uBeat:{value:0},uAudio:{value:0},uFlash:{value:0},uPix:{value:pr},uShowAll:{value:0.32},uSun:{value:new THREE.Vector3(1,0,0)}});
-  buildBackground(); buildStars(); const mask=buildLandMask(); buildOcean(mask); buildDots(mask); buildAtmo(); buildCorona(); buildCore(); buildPools(); buildSparks(); buildAdoptMarker();
+  buildBackground(); buildStars(); const mask=buildLandMask(); buildOcean(mask); buildDots(mask); buildAtmo(); buildCorona(); buildCore(); buildPools(); buildSparks();
   composer=new THREE.EffectComposer(renderer);
   composer.addPass(new THREE.RenderPass(scene,camera));
   bloom=new THREE.UnrealBloomPass(new THREE.Vector2(512,512),0.95,0.62,0.14); composer.addPass(bloom);
@@ -1099,18 +1267,22 @@ function buildOcean(mask){
     fragmentShader:`uniform sampler2D uLand;uniform float uXray,uBeat,uFlash;uniform vec3 uSun;varying vec3 vN;varying vec3 vVN;varying vec3 vVD;varying vec3 vSV;${RIPPLE_GLSL}
     void main(){vec3 n=normalize(vN);float lat=asin(clamp(n.y,-1.0,1.0));float th=atan(n.z,-n.x);
       vec2 uv=vec2(fract(th/6.2831853),lat/3.1415927+0.5);float land=texture2D(uLand,uv).r;
+      vec2 px=vec2(1.5/1024.0,1.5/512.0);
+      float l1=texture2D(uLand,uv+vec2(px.x,0.0)).r,l2=texture2D(uLand,uv-vec2(px.x,0.0)).r,l3=texture2D(uLand,uv+vec2(0.0,px.y)).r,l4=texture2D(uLand,uv-vec2(0.0,px.y)).r;
+      float coast=clamp((max(max(l1,l2),max(l3,l4))-min(min(l1,l2),min(l3,l4)))*1.2,0.0,1.0);
       float fres=pow(1.0-max(dot(normalize(vVN),normalize(vVD)),0.0),2.4);
       vec3 col=mix(vec3(0.010,0.022,0.055),vec3(0.028,0.065,0.135),fres);
-      col=mix(col,vec3(0.040,0.052,0.090),land*0.75);
+      col=mix(col,vec3(0.046,0.060,0.104),land*0.8);
       float sd=dot(n,uSun);float day=smoothstep(-0.18,0.32,sd);
       col*=mix(0.6,1.3,day);col+=vec3(0.018,0.036,0.070)*day*(1.0-land*0.4);
+      col+=vec3(0.10,0.17,0.32)*coast*0.2*(0.65+0.35*day);
       col+=vec3(1.0,0.42,0.16)*0.05*exp(-sd*sd/0.004)*(1.0-uXray);
       vec3 nv=normalize(vVN);float sp=pow(max(dot(nv,normalize(vSV+normalize(vVD))),0.0),320.0)*(1.0-land)*day;col+=vec3(0.55,0.68,0.95)*sp*0.13;
       float la=degrees(lat),lo=degrees(th);
       float gl=abs(fract(la/15.0+0.5)-0.5)*15.0;float go=abs(fract(lo/15.0+0.5)-0.5)*15.0*cos(lat);
       float grid=(1.0-smoothstep(0.0,0.16,gl))+(1.0-smoothstep(0.0,0.16,go));
       col+=vec3(0.05,0.08,0.16)*grid*0.32*(1.0-land*0.5);
-      float g;vec3 rc;ripple(n,0.6,g,rc);col+=rc*min(g,1.6)*0.36;
+      float g;vec3 rc;ripple(n,0.6,1.0-land,g,rc);col+=rc*min(g,1.6)*0.36;
       col+=vec3(0.16,0.40,1.0)*fres*(0.38+0.25*uBeat+uFlash*0.3);
       float a=mix(1.0,0.06+fres*0.5,uXray);gl_FragColor=vec4(col,a);}`});
   ocean=new THREE.Mesh(new THREE.SphereGeometry(1,128,96),m); ocean.renderOrder=1; scene.add(ocean);
@@ -1127,7 +1299,7 @@ function buildDots(mask){
   const m=new THREE.ShaderMaterial({transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,
     uniforms:{uTime:U.uTime,uRip:U.uRip,uRipP:U.uRipP,uRipC:U.uRipC,uXray:U.uXray,uBeat:U.uBeat,uPix:U.uPix,uSun:U.uSun,uSize:{value:mqMobile.matches?1.9:2.1}},
     vertexShader:`attribute float aR;uniform float uPix,uSize,uXray,uBeat;uniform vec3 uSun;varying vec3 vC;varying float vG;varying float vB;varying float vR;varying float vDay;${RIPPLE_GLSL}
-    void main(){vec3 n=normalize(position);float g;vec3 c;ripple(n,1.0,g,c);vG=g;vC=c;vR=aR;vDay=smoothstep(-0.2,0.35,dot(n,uSun));
+    void main(){vec3 n=normalize(position);float g;vec3 c;ripple(n,1.0,0.0,g,c);vG=g;vC=c;vR=aR;vDay=smoothstep(-0.2,0.35,dot(n,uSun));
       vec3 p=n*(1.004+0.018*min(g,2.0));vec4 mv=modelViewMatrix*vec4(p,1.0);
       vB=step(0.0,-dot(normalize(normalMatrix*n),normalize(-mv.xyz)));
       gl_PointSize=uSize*uPix*(1.0+min(g,2.0)*0.7)*(3.4/-mv.z);gl_Position=projectionMatrix*mv;}`,
@@ -1212,13 +1384,6 @@ function buildCore(){
   shell=new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(pts),new THREE.LineBasicMaterial({color:0x8f6bff,transparent:true,opacity:0,depthWrite:false,blending:THREE.AdditiveBlending}));
   shell.renderOrder=3; scene.add(shell);
 }
-function heartTexture(){
-  if(heartTex) return heartTex;
-  const c=document.createElement('canvas'); c.width=c.height=128; const x=c.getContext('2d');
-  const p=new Path2D('M16 28.5C6 21 0 15.5 0 8.6 0 3.6 3.9 0 8.6 0c3 0 5.8 1.6 7.4 4.2C17.6 1.6 20.4 0 23.4 0 28.1 0 32 3.6 32 8.6 32 15.5 26 21 16 28.5z');
-  x.translate(64-48,64-44); x.scale(3,3); x.shadowColor='rgba(255,61,110,1)'; x.shadowBlur=6; x.fillStyle='#ff4d7a'; x.fill(p);
-  heartTex=new THREE.CanvasTexture(c); return heartTex;
-}
 function buildPools(){
   const bg=new THREE.CylinderGeometry(1,1,1,10,1,true); bg.translate(0,0.5,0);
   const bv='varying float vY;void main(){vY=position.y;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}';
@@ -1233,10 +1398,6 @@ function buildPools(){
     const m=new THREE.ShaderMaterial({uniforms:{uC:{value:new THREE.Color()},uO:{value:0}},vertexShader:'varying vec2 vU;void main(){vU=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}',fragmentShader:rf,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,side:THREE.DoubleSide});
     const mesh=new THREE.Mesh(rg,m); mesh.visible=false; mesh.renderOrder=4; scene.add(mesh); pools.rings.push({mesh,t:-1,life:1,R:0.1});
   }
-  for(let i=0;i<28;i++){
-    const s=new THREE.Sprite(new THREE.SpriteMaterial({map:heartTexture(),transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,opacity:0}));
-    s.visible=false; s.renderOrder=5; scene.add(s); pools.hearts.push({s,t:-1,life:1.8,v:new THREE.Vector3(),p:new THREE.Vector3()});
-  }
   // arcs: a comet of light from the previous quake to the next, so consecutive beats read as one pulse travelling the planet
   const av='varying float vU;void main(){vU=uv.x;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}';
   const af='uniform vec3 uA,uB;uniform float uHead,uO;varying float vU;void main(){float d=uHead-vU;float trail=d>=0.0?exp(-d*4.5):0.0;float head=exp(-d*d*1400.0);vec3 c=mix(uA,uB,vU);gl_FragColor=vec4((c*(trail*0.9+0.12*step(vU,uHead))+vec3(1.0)*head*0.8)*uO,1.0);}';
@@ -1245,52 +1406,50 @@ function buildPools(){
     const mesh=new THREE.Mesh(new THREE.BufferGeometry(),m); mesh.visible=false; mesh.renderOrder=4; scene.add(mesh); pools.arcs.push({mesh,t:-1,life:2,dur:0.6});
   }
 }
-function buildAdoptMarker(){
-  adoptGroup=new THREE.Group(); adoptGroup.visible=false; scene.add(adoptGroup);
-  const hs=new THREE.Sprite(new THREE.SpriteMaterial({map:heartTexture(),transparent:true,depthWrite:false,opacity:0.95})); hs.scale.setScalar(0.07); hs.renderOrder=6; adoptGroup.add(hs); adoptGroup.userData.heart=hs;
-  const ring=new THREE.LineLoop(new THREE.BufferGeometry(),new THREE.LineBasicMaterial({color:0xff4d7a,transparent:true,opacity:0.55,depthWrite:false,blending:THREE.AdditiveBlending}));
-  ring.renderOrder=6; adoptGroup.add(ring); adoptGroup.userData.ring=ring;
-}
-function placeAdoptMarker(a){
-  if(!adoptGroup) return;
-  if(!a){ adoptGroup.visible=false; return; }
-  adoptGroup.visible=true;
-  const c=latLonToVec(a.lat,a.lon,1); adoptGroup.userData.heart.position.copy(c).multiplyScalar(1.07); adoptGroup.userData.center=c;
-  const ang=a.rkm/6371, up=Math.abs(c.y)>0.95?new THREE.Vector3(1,0,0):new THREE.Vector3(0,1,0);
-  const t1=new THREE.Vector3().crossVectors(c,up).normalize(), t2=new THREE.Vector3().crossVectors(c,t1).normalize(), pts=[];
-  for(let i=0;i<96;i++){ const q=i/96*Math.PI*2; pts.push(c.clone().multiplyScalar(Math.cos(ang)).addScaledVector(t1,Math.sin(ang)*Math.cos(q)).addScaledVector(t2,Math.sin(ang)*Math.sin(q)).multiplyScalar(1.005)); }
-  adoptGroup.userData.ring.geometry.dispose(); adoptGroup.userData.ring.geometry=new THREE.BufferGeometry().setFromPoints(pts);
-}
 function setQuakePoints(s){
   if(!renderer) return;
   if(quakePts){ scene.remove(quakePts); quakePts.geometry.dispose(); }
-  const n=s.events.length, pos=new Float32Array(n*3), mag=new Float32Array(n), col=new Float32Array(n*3), play=new Float32Array(n).fill(-1), dr=new Float32Array(n);
-  s.events.forEach((e,i)=>{ pos.set([e.vec.x,e.vec.y,e.vec.z],i*3); mag[i]=Math.max(0,e.mag); col.set(e.rgb,i*3); dr[i]=e.dr; });
-  const g=new THREE.BufferGeometry(); g.setAttribute('position',new THREE.BufferAttribute(pos,3)); g.setAttribute('aMag',new THREE.BufferAttribute(mag,1)); g.setAttribute('aCol',new THREE.BufferAttribute(col,3)); g.setAttribute('aPlay',new THREE.BufferAttribute(play,1)); g.setAttribute('aDR',new THREE.BufferAttribute(dr,1));
+  // quakes first, then one hollow teal marker per tsunami that has no quake partner
+  const ev=s.events, tf=s.tsFree, n=ev.length, N=n+tf.length;
+  const pos=new Float32Array(N*3), mag=new Float32Array(N), col=new Float32Array(N*3), play=new Float32Array(N).fill(-1), dr=new Float32Array(N), tsu=new Float32Array(N);
+  ev.forEach((e,i)=>{ pos.set([e.vec.x,e.vec.y,e.vec.z],i*3); mag[i]=e.vm; col.set(e.rgb,i*3); dr[i]=e.dr; tsu[i]=e.tsu?1:0; });
+  tf.forEach((w,j)=>{ const i=n+j; pos.set([w.vec.x,w.vec.y,w.vec.z],i*3); mag[i]=3+3*w.I; col.set(TSU_RGB,i*3); dr[i]=1; tsu[i]=2; });
+  const g=new THREE.BufferGeometry(); g.setAttribute('position',new THREE.BufferAttribute(pos,3)); g.setAttribute('aMag',new THREE.BufferAttribute(mag,1)); g.setAttribute('aCol',new THREE.BufferAttribute(col,3)); g.setAttribute('aPlay',new THREE.BufferAttribute(play,1)); g.setAttribute('aDR',new THREE.BufferAttribute(dr,1)); g.setAttribute('aTsu',new THREE.BufferAttribute(tsu,1));
   if(!quakePts || !quakePts.material){
     quakePts=new THREE.Points(g,new THREE.ShaderMaterial({transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,uniforms:{uTime:U.uTime,uPix:U.uPix,uXray:U.uXray,uShowAll:U.uShowAll},
-      vertexShader:`attribute float aMag,aPlay,aDR;attribute vec3 aCol;uniform float uTime,uPix,uXray,uShowAll;varying vec3 vC;varying float vA;varying float vF;
+      vertexShader:`attribute float aMag,aPlay,aDR,aTsu;attribute vec3 aCol;uniform float uTime,uPix,uXray,uShowAll;varying vec3 vC;varying float vA;varying float vF;varying float vT;
       void main(){vec3 n=normalize(position);float r=mix(1.007,aDR,uXray);vec4 mv=modelViewMatrix*vec4(n*r,1.0);
         float pl=step(0.0,aPlay);float age=max(uTime-aPlay,0.0);float fl=pl*exp(-age*1.5);
-        vA=mix(uShowAll,0.95,pl);vF=fl;vC=aCol;
-        gl_PointSize=(1.5+aMag*0.95)*(1.0+fl*2.6)*uPix*(7.0/-mv.z);gl_Position=projectionMatrix*mv;}`,
-      fragmentShader:`varying vec3 vC;varying float vA;varying float vF;void main(){float d=length(gl_PointCoord-0.5);float core=smoothstep(0.2,0.0,d);float halo=smoothstep(0.5,0.0,d);
-        vec3 c=vC*(halo*0.75+core*1.3)+vec3(1.0)*core*vF*1.3;float a=(halo*0.5+core)*(vA+vF);gl_FragColor=vec4(c*a,1.0);}`}));
+        vA=mix(uShowAll,0.95,pl);vF=fl;vC=aCol;vT=aTsu;
+        gl_PointSize=(1.5+aMag*0.95)*(1.0+fl*2.6)*(aTsu>0.5?1.25:1.0)*uPix*(7.0/-mv.z);gl_Position=projectionMatrix*mv;}`,
+      fragmentShader:`varying vec3 vC;varying float vA;varying float vF;varying float vT;void main(){float d=length(gl_PointCoord-0.5);float core=smoothstep(0.2,0.0,d);float halo=smoothstep(0.5,0.0,d);
+        float ring=smoothstep(0.07,0.0,abs(d-0.4));vec3 tc=vec3(0.27,0.94,0.84);vec3 c;float a;
+        if(vT>1.5){c=tc*(ring*1.3+halo*0.12)+vec3(1.0)*core*vF;a=(ring+halo*0.25+core*vF)*(vA+vF);}
+        else{c=vC*(halo*0.75+core*1.3)+vec3(1.0)*core*vF*1.3+tc*ring*vT*1.1;a=(halo*0.5+core+ring*vT*0.7)*(vA+vF);}
+        gl_FragColor=vec4(c*a,1.0);}`}));
     quakePts.renderOrder=3;
   } else quakePts.geometry=g;
   scene.add(quakePts);
 }
 function markPlayed(i,when){ if(!quakePts) return; const a=quakePts.geometry.getAttribute('aPlay'); a.array[i]=when; a.needsUpdate=true; }
-function resetPlayed(s,uptoIdx){ if(!quakePts) return; const a=quakePts.geometry.getAttribute('aPlay'); for(let i=0;i<a.count;i++) a.array[i]= i<uptoIdx ? U.uTime.value-60 : -1; a.needsUpdate=true; }
+function resetPlayed(s,upto,tupto=0){ if(!quakePts) return; const a=quakePts.geometry.getAttribute('aPlay'), n=s.events.length, past=U.uTime.value-60; for(let i=0;i<a.count;i++) a.array[i]= (i<n? i<upto : i-n<tupto) ? past : -1; a.needsUpdate=true; }
 
 /* ---- spawners ---- */
+function ripSlot(){ // the free slot, or the one with the least ripple left
+  const rip=U.uRip.value, rp=U.uRipP.value, now=U.uTime.value; let best=0,score=1e9;
+  for(let i=0;i<RIP_N;i++){ const age=now-rip[i].w, life=rp[i].z, rem=(age<0||age>life)? -1 : Math.abs(rp[i].w)*(1-age/life); if(rem<score){score=rem;best=i;} }
+  return best;
+}
 function spawnRipple(e,o={},mm=e.mag){
-  const rip=U.uRip.value, rp=U.uRipP.value, rc=U.uRipC.value, now=U.uTime.value;
-  let best=0,score=1e9;
-  for(let i=0;i<RIP_N;i++){ const age=now-rip[i].w, life=rp[i].z, rem=(age<0||age>life)? -1 : rp[i].w*(1-age/life); if(rem<score){score=rem;best=i;} }
+  const rip=U.uRip.value, rp=U.uRipP.value, rc=U.uRipC.value, now=U.uTime.value, best=ripSlot();
   const m=Math.max(0,mm), reach=Math.min(2.2,0.05+0.035*Math.exp(0.48*m)), life=1.6+0.55*m;
   const sp=o.speed||1, c=o.col||e.rgb;
   rip[best].set(e.vec.x,e.vec.y,e.vec.z,now); rp[best].set(reach/life*sp,(0.02+reach*0.05)*(o.thin||1),life/(o.speed?Math.sqrt(sp):1),Math.min(1.05,0.35+0.1*m)*(o.w||1)); rc[best].set(c[0],c[1],c[2]);
+}
+// a tsunami: a slower, wider wave train over the sea; the higher the wave, the farther it runs
+function spawnTsunami(w){
+  const i=ripSlot(), I=w.I, reach=Math.min(2.6,0.35+1.9*I), life=4+6*I, c=TSU_RGB;
+  U.uRip.value[i].set(w.vec.x,w.vec.y,w.vec.z,U.uTime.value); U.uRipP.value[i].set(reach/life,0.03+0.05*I,life,-(0.55+0.85*I)); U.uRipC.value[i].set(c[0],c[1],c[2]);
 }
 const _up=HAS3? new THREE.Vector3(0,1,0) : null;
 function spawnBeam(e,mm=e.mag){
@@ -1305,14 +1464,6 @@ function spawnRing(e,mm=e.mag){
   const m=Math.max(0,mm); r.t=U.uTime.value; r.life=1.2+0.3*m; r.R=Math.min(0.3,0.04+0.04*m);
   r.mesh.position.copy(e.vec).multiplyScalar(1.006); r.mesh.quaternion.setFromUnitVectors(_z,e.vec);
   r.mesh.material.uniforms.uC.value.setRGB(e.rgb[0],e.rgb[1],e.rgb[2]); r.mesh.visible=true;
-}
-function spawnHearts(e){
-  for(let k=0;k<7;k++){
-    let h=pools.hearts.find(x=>x.t<0); if(!h) h=pools.hearts.reduce((a,c)=>c.t<a.t?c:a);
-    h.t=U.uTime.value+k*0.06; h.life=1.6+Math.random()*0.6; h.p.copy(e.vec).multiplyScalar(1.02);
-    const side=new THREE.Vector3(Math.random()-0.5,Math.random()-0.5,Math.random()-0.5).multiplyScalar(0.25);
-    h.v.copy(e.vec).multiplyScalar(0.16+Math.random()*0.1).add(side.multiplyScalar(0.5)); h.s.visible=true;
-  }
 }
 // sparks: embers thrown across the surface from a great quake (positions computed on the GPU from spawn time)
 const SPARK_N=320; let sparks=null, sparkNext=0;
@@ -1365,8 +1516,6 @@ function updatePools(){
     const grow=Math.min(1,(now-b.t)/0.18); b.mesh.scale.set(b.w*(1+a*0.6),b.h*grow*(1-a*0.25),b.w*(1+a*0.6)); b.mesh.material.uniforms.uO.value=Math.pow(1-a,1.8); }
   for(const r of pools.rings){ if(r.t<0) continue; const a=(now-r.t)/r.life; if(a>=1){ r.t=-1; r.mesh.visible=false; continue; }
     const s=r.R*(0.08+Math.pow(a,0.55)); r.mesh.scale.set(s,s,s); r.mesh.material.uniforms.uO.value=Math.pow(1-a,2)*0.9; }
-  for(const h of pools.hearts){ if(h.t<0) continue; const age=now-h.t; if(age<0){ h.s.material.opacity=0; continue; } const a=age/h.life; if(a>=1){ h.t=-1; h.s.visible=false; continue; }
-    h.s.position.copy(h.p).addScaledVector(h.v,age); const sc=0.018+0.02*Math.sin(Math.min(1,a*3)*Math.PI/2); h.s.scale.setScalar(sc); h.s.material.opacity=(1-a)*0.95; }
 }
 
 /* ================= Camera ================= */
@@ -1414,14 +1563,15 @@ function layoutGlobe(){
 
 /* ================= Player ================= */
 const SPEEDS=[[0.5,'느리게'],[1,'보통 속도'],[2,'빠르게'],[4,'아주 빠르게']];
-const Player={s:null,p:0,playing:false,speedI:store.get('speedI',1),slow:1,next:0,started:false,
+const Player={s:null,p:0,playing:false,speedI:store.get('speedI',1),slow:1,next:0,tnext:0,started:false,
   get speed(){ return SPEEDS[this.speedI][0]; },
   load(s,{autoplay=false,keepReal=null,soft=false}={}){
     // keepReal: the real moment already played up to (events at or before it count as heard)
     prepare(s); this.s=s; this.slow=1;
     if(keepReal==null){ this.p=0; this.next=0; }
     else { this.next=firstAfterReal(s,keepReal); this.p= keepReal>=s.tEnd ? s.r[s.r.length-1]+0.001 : pAtReal(s,keepReal); }
-    setQuakePoints(s); resetPlayed(s,this.next);
+    this.tnext=firstTsIdxAfter(s,this.p);
+    setQuakePoints(s); resetPlayed(s,this.next,this.tnext);
     if(!soft){
       vq.length=0;
       if(U.uRip) for(const r of U.uRip.value) r.w=-1e4;
@@ -1433,8 +1583,9 @@ const Player={s:null,p:0,playing:false,speedI:store.get('speedI',1),slow:1,next:
   play(){ if(!this.s) return; if(this.p>=this.s.total-0.01){ this.seek(0); } this.playing=true; UI.setPlay(true); },
   pause(){ this.playing=false; UI.setPlay(false); },
   toggle(){ this.playing? this.pause() : this.play(); },
-  seek(p){ const s=this.s; this.p=clamp(p,0,s.total); this.next=firstIdxAfter(s,this.p); for(let i=vq.length-1;i>=0;i--) if(vq[i].kind==='q') vq.splice(i,1); resetPlayed(s,this.next); drawTimeline(); UI.tickClock(true); UI.hideCaption(); },
+  seek(p){ const s=this.s; this.p=clamp(p,0,s.total); this.next=firstIdxAfter(s,this.p); this.tnext=firstTsIdxAfter(s,this.p); for(let i=vq.length-1;i>=0;i--) if(vq[i].kind!=='b') vq.splice(i,1); resetPlayed(s,this.next,this.tnext); drawTimeline(); UI.tickClock(true); UI.hideCaption(); },
   seekEvent(e){ this.seek(Math.max(0,this.s.r[e.i]-0.6)); if(!this.playing) this.play(); },
+  seekTsunami(w){ if(w.q) return this.seekEvent(w.q); this.seek(Math.max(0,w.p-0.6)); if(!this.playing) this.play(); },
   // at the live edge the clock is the wall clock; otherwise it is the replayed moment
   realNow(){ const s=this.s; return liveEdge()? Math.max(Date.now(),s.tEnd) : realAt(s,this.p); },
   goLive(){ const s=SCENES.find(x=>x.key==='now'); if(this.s!==s) this.load(s,{keepReal:Infinity}); else this.seek(s.r[s.r.length-1]+0.001); this.play(); },
@@ -1447,11 +1598,13 @@ const Player={s:null,p:0,playing:false,speedI:store.get('speedI',1),slow:1,next:
     else this.p+=dt*rate;
     const horizon=this.p+0.16*rate, ev=s.events, r=s.r;
     while(this.next<ev.length && r[this.next]<=horizon){ emitQuake(ev[this.next], clockNow()+Math.max(0,(r[this.next]-this.p)/rate), true); this.next++; }
-    if(this.p>=s.total){ this.p=0; this.next=0; resetPlayed(s,0); UI.toast(`${s.kind==='now'?'하루':'기록'}의 처음부터 다시 들려드려요`); }
+    const tf=s.tsFree; while(this.tnext<tf.length && tf[this.tnext].p<=horizon){ const w=tf[this.tnext++]; emitTsunami(w, clockNow()+Math.max(0,(w.p-this.p)/rate), true); }
+    if(this.p>=s.total){ this.p=0; this.next=0; this.tnext=0; resetPlayed(s,0,0); UI.toast('처음부터 다시 재생합니다'); }
   }
 };
 function firstAfterReal(s,t){ let lo=0,hi=s.events.length; while(lo<hi){ const m=(lo+hi)>>1; if(s.events[m].t<=t) lo=m+1; else hi=m; } return lo; }
 function liveEdge(){ const s=Player.s; return !!(s && live.on && s.kind==='now' && Player.p>=s.r[s.r.length-1]); }
+function firstTsIdxAfter(s,p){ const tf=s.tsFree; let k=0; while(k<tf.length && tf[k].p<p) k++; return k; }
 function firstIdxAfter(s,p){ let lo=0,hi=s.r.length; while(lo<hi){ const m=(lo+hi)>>1; if(s.r[m]<p) lo=m+1; else hi=m; } return lo; }
 
 /* ================= Event clock & queues ================= */
@@ -1461,7 +1614,7 @@ const vq=[];
 function fireQueues(){
   const now=clockNow(); let due=null;
   for(let i=vq.length-1;i>=0;i--){ if(vq[i].at<=now){ (due||(due=[])).push(vq[i]); vq.splice(i,1); } }
-  if(due){ due.sort((a,b)=>a.at-b.at); for(const it of due){ if(it.kind==='q') onQuakeVisual(it.e,it.user,it.arrival); else Heart.onBeat(); } }
+  if(due){ due.sort((a,b)=>a.at-b.at); for(const it of due){ if(it.kind==='q') onQuakeVisual(it.e,it.user,it.arrival); else if(it.kind==='t') onTsunamiVisual(it.w,it.q,it.user); else Heart.onBeat(); } }
 }
 const _v=HAS3? new THREE.Vector3():null;
 function spatial(e){
@@ -1471,12 +1624,17 @@ function spatial(e){
   return {pan:clamp(_v.x,-1,1)*0.9, far:clamp((0.15-facing)*1.6,0,1)*(U.uXray.value>0.5?0.4:1)};
 }
 function emitQuake(e,at,fromPlayback,arrival=false){
+  const P=PK();
   if(Sound.live()){
-    const sp=spatial(e), ta=Sound.at(at); if(arrival) Sound.ping(Math.max(Sound.ctx.currentTime,ta-0.32),sp.pan); Sound.quake(e,ta,arrival?{...sp,gain:1.25}:sp);
-    if(Adopt.has(e)) Sound.motif(e,ta);
-    if(e.mag>=7) Sound.duck(ta,1.2);
+    const sp=spatial(e), ta=Sound.at(at); if(arrival) Sound.ping(Math.max(Sound.ctx.currentTime,ta-0.32),sp.pan); Sound.quake(e,ta,arrival?{...sp,gain:1.25,P}:{...sp,P});
+    if(e.mag>=P.alert) Sound.duck(ta,1.2);
   }
   vq.push({at:at+Sound.lat(),kind:'q',e,user:!fromPlayback,arrival});
+  if(e.tsu) emitTsunami(e.tsu, at+1.0+0.4*e.tsu.I, fromPlayback, e); // the quake's tsunami follows it
+}
+function emitTsunami(w,at,fromPlayback,q=null){
+  if(Sound.live()) Sound.tsunami(w,Sound.at(at),spatial(w));
+  vq.push({at:at+Sound.lat(),kind:'t',w,q,user:!fromPlayback});
 }
 
 /* ================= Heart ================= */
@@ -1491,45 +1649,65 @@ const Heart={bpm:62,adr:0,next:0,env:0,
     this.env*=Math.exp(-dt*6.5);
   },
   onBeat(){ this.env=1; ECG.beatAt=vtime; UI.beat(); SeisSynth.kick(0.18); },
-  shock(m){ this.adr=Math.max(this.adr,adrFor(m)); if(m>=7) this.next+=0.85; }
+  shock(m,big){ this.adr=Math.max(this.adr,adrFor(m)); if(big) this.next+=0.85; }
 };
 
 /* ================= Visual reaction to a quake ================= */
 let lastEv=null, lastEvAt=-99;
 function onQuakeVisual(e,user,arrival){
+  const s=Player.s, P=s? s.P : KIND.std;
   if(renderer){
-    const mm=arrival? Math.max(e.mag,3.6) : e.mag; // even a tiny live quake gets a visible wave
-    spawnRipple(e,{},mm); if(e.mag>=6) spawnRipple(e,{speed:1.75,col:[0.78,0.88,1.0],w:0.5,thin:0.6}); spawnBeam(e,mm); if(e.mag>=Player.s.ringThr || user || arrival) spawnRing(e,mm);
-    if(Player.s && Player.s.events[e.i]===e) markPlayed(e.i,U.uTime.value);
-    Cam.attn.push({v:e.vec,w:Math.pow(10,0.35*Math.max(0,e.mag))*(e.hl?4:1),t:U.uTime.value});
+    const mm=arrival? Math.max(e.vm,3.6) : e.vm; // even a tiny live quake gets a visible wave
+    spawnRipple(e,{},mm); if(e.mag>=P.th.gong) spawnRipple(e,{speed:1.75,col:[0.78,0.88,1.0],w:0.5,thin:0.6},mm); spawnBeam(e,mm); if(e.mag>=s.ringThr || user || arrival) spawnRing(e,mm);
+    if(s && s.events[e.i]===e) markPlayed(e.i,U.uTime.value);
+    Cam.attn.push({v:e.vec,w:Math.pow(10,0.35*e.vm)*(e.hl?4:1),t:U.uTime.value});
     if(user||arrival){ Cam.attn.push({v:e.vec,w:1e4,t:U.uTime.value}); }
     if(lastEv && lastEv!==e && vtime-lastEvAt<12) spawnArc(lastEv,e);
-    if((user || (!e.hl && !arrival && e.mag>=Player.s.ringThr-1)) && (!Tag.e || vtime-Tag.t>1.5 || e.mag>=Tag.e.mag || user)) showTag(e);
+    if((user || (!e.hl && !arrival && e.mag>=s.tagThr)) && (!Tag.e || vtime-Tag.t>1.5 || (Tag.e.kind!=='tsu' && e.mag>=Tag.e.mag) || user)) showTag(e);
   }
-  Heart.shock(e.mag);
-  SeisSynth.kick(0.25+0.11*Math.max(0,e.mag));
+  Heart.shock(e.vm, e.mag>=P.alert);
+  SeisSynth.kick(0.25+0.11*e.vm);
   UI.showNow(e); lastEv=e; lastEvAt=vtime;
-  if(arrival) UI.caption(e,{eye:'LIVE · USGS FEED', title:'방금 들어온 지진 · '+e.ko.main, sub:`${agoText(Date.now()-e.t)} 발생 · ${fHM(e.t)} · 깊이 ${fDepth(e.depth)}`});
+  if(arrival) UI.caption(e,{eye:'LIVE · USGS FEED', title:'방금 들어온 지진 · '+e.ko.main, sub:`${agoText(Date.now()-e.t)} 발생 · ${fHM(e.t)} · ${depthText(e)}`});
   else if(!user && e.hl) UI.caption(e);
-  if(e.mag>=6.4 && (e.hl || e.mag>=7)) greatQuake(e,user);
-  if(Adopt.has(e)){ Adopt.beat(e,user); if(renderer) spawnHearts(e); }
+  if(e.mag>=P.great[0] && (e.hl || e.mag>=P.alert)) greatQuake(e,user);
+}
+// a tsunami: a wave train over the sea. One without a quake partner also gets its own ring, tag and card.
+// A quake's own tsunami pulses the quake's card, or takes the card when later quakes have already replaced it.
+function onTsunamiVisual(w,q,user){
+  const s=Player.s;
+  if(renderer){
+    spawnTsunami(w);
+    if(!q){
+      spawnRing(w,3+3*w.I);
+      if(s && s.tsFree[w.j]===w) markPlayed(s.events.length+w.j,U.uTime.value);
+      Cam.attn.push({v:w.vec,w:Math.pow(10,0.35*(3+3*w.I))*(user?1e3:1),t:U.uTime.value});
+      if(user || w.I>=0.2 || !Tag.e || vtime-Tag.t>1.5) showTag(w);
+    }
+    else if(user || (w.I>=0.38 && (!Tag.e || vtime-Tag.t>1.5 || Tag.e===q || (Tag.e.kind!=='tsu' && Tag.e.mag<q.mag)))) showTag(w);
+  }
+  SeisSynth.kick(0.15+0.5*w.I);
+  if(q && UI.nowItem===q) UI.pulseTsu(w,q);
+  else { UI.showNowTsu(w); if(!q && w.h>=10 && !user) UI.captionTsu(w); }
 }
 const FX={flash:0, shockT:99, shockA:0, alert:0, alertOn:false, e:null};
 // The big ones: a flash out of the epicentre, a shockwave that bends the screen, embers, a shaking console, and a red alert pulsing with the heart
 function greatQuake(e,user){
-  const I=clamp((e.mag-6.4)/2.6,0,1); // M6.4 → 0 … M9 → 1
+  const P=PK(), I=clamp((e.mag-P.great[0])/(P.great[1]-P.great[0]),0,1); // M6.4 → 0 … M9 → 1 (in a 1900+ decade: M8 → 0 … M9.5 → 1)
   FX.e=e; FX.flash=Math.max(FX.flash, RM? 0.35+I*0.3 : 0.6+I*0.95);
   if(finalPass){ const c=e.rgb; finalPass.uniforms.uFCol.value.setRGB(lerp(c[0],1,0.35),lerp(c[1],1,0.35),lerp(c[2],1,0.35)); }
   if(!RM){ FX.shockT=0; FX.shockA=0.45+I*0.75; Cam.shake=Math.max(Cam.shake,0.004+I*0.014); }
-  if(e.mag>=7){ FX.alert=Math.max(FX.alert,0.35+I*0.65); if(!user && !RM) Player.slow=0.32; }
-  if(renderer){ spawnSparks(e,Math.round(60+I*200)); if(e.mag>=7.5) spawnRipple(e,{speed:0.5,col:[1.0,0.92,0.85],w:0.55,thin:1.5}); }
-  if(!RM && e.mag>=7){ const h=$('#hud'); h.style.setProperty('--amp',(2+I*7).toFixed(1)+'px'); h.style.setProperty('--dur',(0.8+I*0.9).toFixed(2)+'s'); h.classList.remove('shake'); void h.offsetWidth; h.classList.add('shake'); }
+  if(e.mag>=P.alert){ FX.alert=Math.max(FX.alert,0.35+I*0.65); if(!user && !RM) Player.slow=0.32; }
+  if(renderer){ spawnSparks(e,Math.round(60+I*200)); if(e.mag>=P.th.crack) spawnRipple(e,{speed:0.5,col:[1.0,0.92,0.85],w:0.55,thin:1.5},e.vm); }
+  if(!RM && e.mag>=P.alert){ const h=$('#hud'); h.style.setProperty('--amp',(2+I*7).toFixed(1)+'px'); h.style.setProperty('--dur',(0.8+I*0.9).toFixed(2)+'s'); h.classList.remove('shake'); void h.offsetWidth; h.classList.add('shake'); }
 }
 // lock-on tag: brackets and a label riding on the latest notable quake
 const Tag={e:null,t:-99,el:null,on:false};
 function showTag(e){
   const el=Tag.el||(Tag.el=$('#tag')); Tag.e=e; Tag.t=vtime;
-  el.style.setProperty('--q',css(e.rgb)); $('#tagMag').textContent='M'+e.mag.toFixed(1); $('#tagTxt').textContent=(e.ko.region||e.ko.main)+' · '+fDepth(e.depth);
+  el.style.setProperty('--q',css(e.rgb));
+  if(e.kind==='tsu'){ $('#tagMag').textContent=e.h==null? '쓰나미' : fH(e.h); $('#tagTxt').textContent='쓰나미 · '+e.ko; }
+  else { $('#tagMag').textContent='M'+e.mag.toFixed(1); $('#tagTxt').textContent=(e.ko.region||e.ko.main)+' · '+(e.nod? '깊이 미상' : fDepth(e.depth))+(e.tsu? ' · 쓰나미' : ''); }
   el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop');
 }
 function updateTag(){
@@ -1545,36 +1723,6 @@ function updateTag(){
     }
   }
   if(show!==Tag.on){ Tag.on=show; el.classList.toggle('on',show); }
-}
-
-/* ================= Adoption ================= */
-const PRESETS=[
-  {id:'korea',name:'한반도',lat:36.3,lon:127.8,rkm:450},{id:'japan',name:'일본 열도',lat:36.5,lon:139.5,rkm:1300},
-  {id:'cal',name:'캘리포니아',lat:36.5,lon:-119.5,rkm:650},{id:'alaska',name:'알래스카',lat:61.5,lon:-150,rkm:900},
-  {id:'aleut',name:'알류샨 열도',lat:52.5,lon:-175,rkm:1300},{id:'hawaii',name:'하와이',lat:19.6,lon:-155.5,rkm:350},
-  {id:'carib',name:'푸에르토리코',lat:18.3,lon:-66.5,rkm:500},{id:'panama',name:'파나마·중미',lat:9.5,lon:-83,rkm:1100},
-  {id:'andes',name:'안데스',lat:-22,lon:-70,rkm:1700},{id:'indo',name:'인도네시아',lat:-3,lon:118,rkm:2300},
-  {id:'tonga',name:'통가·피지 해구',lat:-20,lon:-177,rkm:1000},{id:'kamchatka',name:'캄차카·쿠릴',lat:51,lon:158,rkm:900},
-  {id:'texas',name:'미국 중남부',lat:33.5,lon:-101,rkm:800},{id:'yellow',name:'옐로스톤·유타',lat:41.5,lon:-111.5,rkm:500},
-  {id:'himalaya',name:'히말라야',lat:28.5,lon:85,rkm:900},{id:'anatolia',name:'아나톨리아',lat:38,lon:36.5,rkm:700}
-];
-const PET_NAMES=['쿵쿵이','두근이','꿈틀이','들썩이','콩닥이','흔들이','덜컹이'];
-const Adopt={a:store.get('adopt',null), beats:store.get('beats',0), picking:false,
-  has(e){ const a=this.a; return !!a && haversine(a.lat,a.lon,e.lat,e.lon)<=a.rkm; },
-  set(p){ const born=this.a&&this.a.born || Date.now(); this.a={name:(this.a&&this.a.name)||PET_NAMES[Math.floor(Math.random()*PET_NAMES.length)],label:p.name,lat:p.lat,lon:p.lon,rkm:p.rkm,born}; store.set('adopt',this.a); placeAdoptMarker(this.a); UI.renderAdopt(); UI.toast(`${josa(this.a.name,['과','와'])} 함께해요 · ${p.name}`);
-    if(camera){ Cam.target=latLonToVec(p.lat,p.lon,1); Cam.attn=[]; Cam.hold=0; } },
-  clear(){ this.a=null; store.set('adopt',null); placeAdoptMarker(null); UI.renderAdopt(); },
-  beat(e,user){ if(!user){ this.beats++; store.set('beats',this.beats); } UI.toast(`${josa(this.a.name,['이','가'])} 두근했어요 · M${e.mag.toFixed(1)} · ${e.ko.main}`); UI.renderAdoptStats(); },
-  statsFor(s){ const list=s.events.filter(e=>this.has(e)); return {list, n:list.length, max:list.reduce((a,b)=>!a||b.mag>a.mag?b:a,null), avgDepth:list.length? list.reduce((a,b)=>a+b.depth,0)/list.length : 0}; }
-};
-function persona(name,st,s){
-  const nm=josa(name,['은','는']);
-  if(!st.n) return `${nm} 이 기록 속에서 조용히 자고 있어요. 다른 시간으로 여행하면 목소리를 들을 수 있을지도 몰라요.`;
-  if(st.max && st.max.mag>=6) return `${nm} 이때 정말 크게 울었어요. 가장 큰 울음은 규모 ${st.max.mag.toFixed(1)}였어요.`;
-  if(st.avgDepth>150) return `${nm} 속이 깊은 아이예요. 평균 ${Math.round(st.avgDepth)} km 아래에서 낮고 길게 말해요.`;
-  if(st.n>=20) return `${nm} 수다쟁이예요. 이 기록에서만 ${st.n}번이나 말을 걸어요.`;
-  if(st.max && st.max.mag>=4.5) return `${nm} 평소엔 얌전하다가 가끔 크게 울어요.`;
-  return `${nm} 가끔 작은 목소리로 안부를 전해요. 이 기록에서는 ${st.n}번이에요.`;
 }
 
 /* ================= Seismograph strip ================= */
@@ -1630,27 +1778,33 @@ function drawTimeline(){
   const w=c.clientWidth, h=c.clientHeight; if(!w||!h) return;
   if(c.width!==Math.round(w*dpr)||c.height!==Math.round(h*dpr)){ c.width=Math.round(w*dpr); c.height=Math.round(h*dpr); }
   x.setTransform(dpr,0,0,dpr,0,0); x.clearRect(0,0,w,h);
-  const [t0,t1]=tlSpan(s), span=Math.max(1,t1-t0), X=t=>4+(t-t0)/span*(w-8);
+  const [t0,t1]=tlSpan(s), span=Math.max(1,t1-t0), X=t=>4+(t-t0)/span*(w-8), w0=w;
   const cur=Player.realNow();
   x.fillStyle='rgba(150,170,255,0.08)'; x.fillRect(0,h-1,w,1);
-  const step = span<=36*3600e3 ? 3*3600e3 : span<=4*86400e3 ? 12*3600e3 : 86400e3;
   x.fillStyle='rgba(150,170,255,0.18)';
-  const k0=Math.ceil((t0+9*3600e3)/step)*step-9*3600e3;
-  for(let t=k0;t<=t1;t+=step){ x.fillRect(Math.round(X(t)),0,1,h); }
+  if(span>120*86400e3){ for(let y=+kst(t0).year+1;;y++){ const t=Date.UTC(y,0,1)-9*3600e3; if(t>t1) break; x.fillRect(Math.round(X(t)),0,1,h); } } // a decade: one tick per new year (KST)
+  else {
+    const step = span<=36*3600e3 ? 3*3600e3 : span<=4*86400e3 ? 12*3600e3 : 86400e3;
+    const k0=Math.ceil((t0+9*3600e3)/step)*step-9*3600e3;
+    for(let t=k0;t<=t1;t+=step){ x.fillRect(Math.round(X(t)),0,1,h); }
+  }
   const range=Math.max(0.5,s.magMax-s.magMin);
   for(const e of s.events){
     const px=X(e.t), hh=3+(h-8)*Math.pow(clamp((e.mag-s.magMin)/range,0,1),1.3), played=e.t<=cur;
     x.fillStyle=css(e.rgb, played?0.95:0.28); x.fillRect(px-0.8,h-1-hh,1.6,hh);
     if(e.hl){ x.fillStyle=played?'#fff':'rgba(255,255,255,0.45)'; x.beginPath(); x.arc(px,h-3-hh,2.2,0,Math.PI*2); x.fill(); }
   }
+  // tsunamis hang from the top edge in teal; the higher the wave, the longer the bar
+  for(const w of s.tsAll){ const px=clamp(X(w.t),2,w0-2), th=2+(h*0.42-2)*Math.pow(w.I,0.7); x.fillStyle= w.t<=cur? 'rgba(70,240,214,0.95)' : 'rgba(70,240,214,0.3)'; x.fillRect(px-0.8,0,1.6,th); }
   const px=X(clamp(cur,t0,t1));
   x.fillStyle='rgba(255,61,110,0.25)'; x.fillRect(px-3,0,6,h);
   x.fillStyle='#ff3d6e'; x.fillRect(px-1,0,2,h);
 }
-const tlSpan = s => [s.tStart, live.on&&s.kind==='now' ? Math.max(s.tEnd,Date.now()) : s.tEnd];
+const tlSpan = s => [s.tFirst, live.on&&s.kind==='now' ? Math.max(s.tEnd,Date.now()) : s.tLast];
+const fTL = (s,ms) => s.kind==='era' ? fYM(ms) : fShort(ms);
 function tlSeek(clientX){
   const s=Player.s, r=TL.cv.getBoundingClientRect(), f=clamp((clientX-r.left-4)/(r.width-8),0,1), [t0,t1]=tlSpan(s), t=t0+f*(t1-t0);
-  Player.seek(t>=s.tEnd ? s.r[s.r.length-1]+0.001 : pAtReal(s,t));
+  Player.seek(s.kind==='now' && t>=s.tEnd ? s.r[s.r.length-1]+0.001 : pAtReal(s,t)+(t>=s.tLast? 0.001 : 0));
 }
 
 /* ================= UI ================= */
@@ -1665,7 +1819,7 @@ const UI={
     $('#muteBtn').onclick=()=>{ if(!Sound.ready){ ensureStarted(true); return; } Sound.setMuted(!Sound.muted); this.setMute(); };
     $('#menuBtn').onclick=()=>this.sheet(!$('#panel').classList.contains('open'));
     $('#sheetClose').onclick=()=>this.sheet(false);
-    $('#liveBtn').onclick=()=>{ ensureStarted(false); Player.goLive(); this.toast('지금 이 순간으로 왔어요 · 새 지진이 올라오면 바로 울려요'); };
+    $('#liveBtn').onclick=()=>{ ensureStarted(false); Player.goLive(); this.toast('지금 시각으로 왔습니다 · 새 지진이 올라오면 바로 울립니다'); };
     $('#voicePrev').onclick=()=>Voice.step(-1);
     $('#voiceNext').onclick=()=>Voice.step(1);
     $('#hud').addEventListener('animationend',e=>{ if(e.animationName==='hudShake') e.currentTarget.classList.remove('shake'); });
@@ -1678,7 +1832,7 @@ const UI={
     TL.cv.addEventListener('pointerup',()=>{ TL.drag=false; });
     TL.cv.addEventListener('pointercancel',()=>{ TL.drag=false; });
     this.setSpeed(); $('#followBtn').setAttribute('aria-pressed',Cam.follow);
-    this.renderScenes(); this.renderVoicePane(); this.renderSound(); this.renderAdopt();
+    this.renderScenes(); this.renderVoicePane(); this.renderSound();
     addEventListener('keydown',e=>{
       if(e.target.tagName==='INPUT') return;
       if(e.code==='Space'){ e.preventDefault(); ensureStarted(false); Player.toggle(); }
@@ -1695,7 +1849,7 @@ const UI={
   setPlay(on){ $('#playIcon').setAttribute('d',on?'M4 2.5h3.6v13H4zM10.4 2.5H14v13h-3.6z':'M4 2.5v13l11-6.5z'); $('#playBtn').setAttribute('aria-label',on?'일시정지':'재생'); },
   setSpeed(){ $('#speedBtn').textContent=SPEEDS[Player.speedI][1]; },
   xray:false,
-  setXray(on){ this.xray=on; $('#xrayBtn').setAttribute('aria-pressed',on); if(on) this.toast('지구를 투명하게 했어요 · 깊이는 4배로 과장했어요'); },
+  setXray(on){ this.xray=on; $('#xrayBtn').setAttribute('aria-pressed',on); if(on) this.toast('지구를 투명하게 했습니다 · 깊이는 4배로 과장했습니다'); },
   setMute(){ const m=!Sound.ready||Sound.muted; $('#muteBtn').textContent=m?'소리 켜기':'소리 끄기'; $('#muteBtn').setAttribute('aria-pressed',m); },
   beat(){ const h=$('#heartIcon'); if(h.animate && !RM) h.animate([{transform:'scale(1.22)'},{transform:'scale(0.96)',offset:0.45},{transform:'scale(1)'}],{duration:Math.min(420,60000/Heart.bpm*0.7),easing:'ease-out'}); },
   _toastT:0,
@@ -1704,94 +1858,96 @@ const UI={
   hideCaption(){ clearTimeout(this._capT); $('#caption').classList.remove('show'); },
   _capRaf:0,
   caption(e,o={}){
-    const c=$('#caption'); c.style.setProperty('--q',css(e.rgb));
-    $('#capEye').textContent=o.eye||magClass(e.mag); $('#capTitle').textContent=o.title||e.hl; $('#capSub').textContent=o.sub||`${fDate(e.t)} ${fHM(e.t)} · 깊이 ${fDepth(e.depth)}`;
+    const c=$('#caption'), P=PK(); c.style.setProperty('--q',css(e.rgb));
+    $('#capEye').textContent=o.eye||magClass(e.mag); $('#capTitle').textContent=o.title||e.hl; $('#capSub').textContent=o.sub||`${fDate(e.t)} ${fHM(e.t)} · ${depthText(e)}${e.tsu? ' · '+tsuText(e.tsu) : ''}`;
     const el=$('#capMag'), to=e.mag; cancelAnimationFrame(this._capRaf);
     if(RM) el.textContent='M '+to.toFixed(1);
     else { const from=Math.max(0,to-2.4), t0=performance.now(), step=()=>{ const k=Math.min(1,(performance.now()-t0)/700); el.textContent='M '+(from+(to-from)*(1-Math.pow(1-k,3))).toFixed(1); if(k<1) this._capRaf=requestAnimationFrame(step); }; step(); }
-    c.classList.toggle('great',e.mag>=7.5); c.classList.add('show'); clearTimeout(this._capT); this._capT=setTimeout(()=>c.classList.remove('show'),e.mag>=7?5200:3800);
+    c.classList.toggle('great',e.mag>=P.capGreat); c.classList.add('show'); clearTimeout(this._capT); this._capT=setTimeout(()=>c.classList.remove('show'),e.mag>=P.alert?5200:3800);
   },
+  captionTsu(w){ // a high tsunami without a quake partner (a volcano, a landslide…)
+    const c=$('#caption'); c.style.setProperty('--q',css(w.rgb)); cancelAnimationFrame(this._capRaf); c.classList.remove('great');
+    $('#capEye').textContent='TSUNAMI'; $('#capMag').textContent=fH(w.h); $('#capTitle').textContent=w.ko; $('#capSub').textContent=`${fTsWhen(w)} · 원인 ${CAUSE[w.cause]||CAUSE[0]} · 관측 지점 ${w.runups}곳`;
+    c.classList.add('show'); clearTimeout(this._capT); this._capT=setTimeout(()=>c.classList.remove('show'),4400);
+  },
+  nowItem:null,
   showNow(e){
-    const n=$('#now'); n.style.setProperty('--q',css(e.rgb));
-    $('#nowMag').textContent=e.mag.toFixed(1); $('#nowPlace').textContent=e.ko.main; $('#nowOrig').textContent=e.ko.sub||'';
-    $('#nowWhen').textContent=`${fShort(e.t)}:${kst(e.t).second}`; $('#nowDepth').textContent='깊이 '+fDepth(e.depth);
+    const n=$('#now'); n.style.setProperty('--q',css(e.rgb)); n.classList.remove('tsu'); this.nowItem=e;
+    $('#nowMagLabel').textContent='규모'; $('#nowMag').textContent=e.mag.toFixed(1); $('#nowPlace').textContent=e.ko.main; $('#nowOrig').textContent=e.ko.sub||'';
+    $('#nowWhen').textContent= PK()===KIND.era ? `${fYMD(e.t)} ${fHM(e.t)}` : `${fShort(e.t)}:${kst(e.t).second}`; $('#nowDepth').textContent=depthText(e);
     $('#nowVoice').textContent=`${noteName(e.midi)}(${noteSol(e.midi)}) · ${voiceLabel(e)}`;
-    $('#nowLink').href='https://earthquake.usgs.gov/earthquakes/eventpage/'+encodeURIComponent(e.id);
+    const l=$('#nowLink'); l.textContent='USGS 기록 ↗'; l.href='https://earthquake.usgs.gov/earthquakes/eventpage/'+encodeURIComponent(e.id);
+    const ts=$('#nowTsu'), tl=$('#nowTsuLink');
+    if(e.tsu){ ts.textContent=tsuText(e.tsu); ts.classList.remove('pulse'); tl.href=NOAA_EV+e.tsu.id; } ts.hidden=tl.hidden=!e.tsu;
     $('#gaugeMark').style.top=`calc(${clamp(e.depth/700,0,1)*100}% - 1.5px)`;
   },
+  showNowTsu(w){
+    const n=$('#now'); n.style.setProperty('--q',css(w.rgb)); n.classList.add('tsu'); this.nowItem=w;
+    $('#nowMagLabel').textContent='쓰나미'; const m=$('#nowMag'); if(w.h==null) m.textContent='–'; else m.innerHTML=`${fHn(w.h)}<small>m</small>`;
+    $('#nowPlace').textContent=w.ko; $('#nowOrig').textContent=w.en;
+    $('#nowWhen').textContent=fTsWhen(w); $('#nowDepth').textContent= w.q? `원인 · ${quakeName(w.q)} (M${w.q.mag.toFixed(1)})` : '원인 · '+(CAUSE[w.cause]||CAUSE[0]); $('#nowVoice').textContent= w.runups? `관측 지점 ${w.runups}곳` : '관측 지점 기록 없음';
+    const l=$('#nowLink'); l.textContent='NOAA 기록 ↗'; l.href=NOAA_EV+w.id; $('#nowTsu').hidden=$('#nowTsuLink').hidden=true;
+  },
+  pulseTsu(w,q){ if(this.nowItem!==q) return; const el=$('#nowTsu'); el.classList.remove('pulse'); void el.offsetWidth; el.classList.add('pulse'); },
   tickClock(force){
     const s=Player.s; if(!s) return; const t=Player.realNow(), k=fDate(t)+fTime(t);
     if(!force && k===this.clockKey) return; this.clockKey=k;
     $('#clockDate').textContent=fDate(t); $('#clockTime').textContent=fTime(t);
     const edge=liveEdge(), lv=live.on&&s.kind==='now';
     $('#tlCount').textContent= edge ? `실시간 대기 중 · ${s.events.length}건 · ${fHM(live.lastPoll)} 확인` : `${Math.min(Player.next,s.events.length)} / ${s.events.length}`;
-    $('#tlEnd').textContent= lv ? '지금' : fShort(s.tEnd);
+    $('#tlEnd').textContent= lv ? '지금' : fTL(s,s.tLast);
     $('#srcChip').classList.toggle('waiting',edge);
     const lb=$('#liveBtn'), show=live.on && !edge; if(lb.hidden===show) lb.hidden=!show;
   },
   bpmShown:-1,
   tickBpm(){ const b=Math.round(Heart.bpm); if(b!==this.bpmShown){ this.bpmShown=b; $('#bpmNum').textContent=b; $('#bpmMood').textContent=moodOf(b); } },
   onScene(s){
-    $('#sceneTag').innerHTML=`<b>${s.year}</b> ${s.title}`;
-    $('#tlStart').textContent=fShort(s.tStart); $('#tlEnd').textContent=fShort(s.tEnd);
+    $('#sceneTag').innerHTML= s.kind==='era' ? `<b>${s.year}</b> 규모 7 이상` : `<b>${s.year}</b> ${s.title}`;
+    $('#tlStart').textContent=fTL(s,s.tFirst); $('#tlEnd').textContent=fTL(s,s.tLast);
     this.updateSrc();
     document.querySelectorAll('.scene').forEach(b=>b.setAttribute('aria-pressed',b.dataset.key===s.key));
-    $('#sceneDetail').innerHTML=`<h3>${s.title}${s.date?` · ${s.date}`:''}</h3><p>${s.blurb}</p><span class="filter">${s.filter} · ${s.events.length}건 · 규모 ${s.magMin.toFixed(1)}–${s.magMax.toFixed(1)}</span>`;
-    this.renderDiary(s); this.renderAdoptStats(); this.tickClock(true);
-    const g=$('#gateLede'); if(g && s.kind==='now') g.textContent=`지난 24시간 동안 지구는 ${s.events.length}번 떨렸어요. 그 떨림 하나하나를 음표로 바꿔, 지구의 심장 소리로 들려드려요.`;
-    if(s.kind==='now'){ $('#gateBpm').innerHTML=`가장 최근 한 시간, 지구의 심박은 <b>${Math.round(bpmFor(activityAt(s,s.tEnd)))} BPM</b>이었어요.`; }
+    this.renderDetail(s); this.tickClock(true);
+    const n=s.events.length, nts=s.tsAll.length, g=$('#gateLede'), gb=$('#gateBpm');
+    if(g) g.textContent= s.kind==='now' ? `지난 24시간 동안 전 세계에서 지진이 ${n}번 기록되었습니다. 지진 하나하나를 음으로 바꿔 지구의 심장 소리로 들려 드립니다.`
+      : s.kind==='week' ? `최근 7일 동안 기록된 규모 4.5 이상 지진 ${n}건을 음으로 바꿔 들려 드립니다.`
+      : s.kind==='era' ? `${s.date}에 일어난 규모 7 이상 지진 ${n}건${nts? `과 쓰나미 ${nts}건` : ''}을 시간 순서대로 들려 드립니다.`
+      : `${s.date} ${s.title} 전후의 지진 ${n}건${nts? `과 쓰나미 ${nts}건` : ''}을 시간 순서대로 들려 드립니다.`;
+    if(gb){ gb.hidden=s.kind!=='now'; if(s.kind==='now') gb.innerHTML=`최근 한 시간의 지진 활동으로 계산한 지구의 심박은 <b>${Math.round(bpmFor(activityAt(s,s.tEnd)))} BPM</b>입니다.`; }
   },
   updateSrc(){
-    const s=Player.s; if(!s) return; const chip=$('#srcChip');
+    const s=Player.s; if(!s) return; const chip=$('#srcChip'), nts=s.tsAll.length;
     chip.classList.toggle('live',live.on&&s.kind==='now');
-    $('#srcText').textContent = s.kind==='past' ? 'USGS 지진 카탈로그' : live.on&&s.kind==='now' ? '실시간 · USGS 피드' : `USGS 기록 · ${fShort(Date.parse(DATA.fetchedAt))} 기준`;
+    $('#srcText').textContent = (s.kind==='past'||s.kind==='era') ? (nts? 'USGS 카탈로그 · NOAA 쓰나미' : 'USGS 지진 카탈로그') : live.on&&s.kind==='now' ? '실시간 · USGS 피드' : `USGS 기록 · ${fShort(Date.parse(DATA.fetchedAt))} 기준`;
   },
   renderScenes(){
     const box=$('#sceneList'); box.innerHTML='';
-    for(const s of SCENES){
-      const mx=Math.max(...s.ev.map(a=>a[4]));
-      const b=document.createElement('button'); b.className='scene'; b.dataset.key=s.key; b.setAttribute('aria-pressed','false');
-      b.innerHTML=`<span class="sc-year">${s.year}</span><span class="sc-body"><span class="sc-title">${s.title}</span><span class="sc-meta">${s.date||s.filter} · ${s.ev.length}건</span></span><span class="sc-mag">M${mx.toFixed(1)}</span>`;
-      b.onclick=()=>{ ensureStarted(false); Player.load(s,{autoplay:true}); if(mqMobile.matches) this.sheet(false); };
-      box.appendChild(b);
+    const groups=[['최근',s=>s.kind==='now'||s.kind==='week'],['큰 지진 전후',s=>s.kind==='past'],['1900년 이후 · 규모 7 이상 지진과 쓰나미',s=>s.kind==='era']];
+    for(const [label,f] of groups){
+      const list=SCENES.filter(f); if(!list.length) continue;
+      const era=list[0].kind==='era', h=document.createElement('div'), wrap=document.createElement('div');
+      h.className='eyebrow sc-group'; h.textContent=label; wrap.className=era? 'era-grid' : 'scene-col'; box.append(h,wrap);
+      for(const s of list){
+        const mx=Math.max(...s.ev.map(a=>a[4])), nts=(s.ts||[]).length, tsTxt=s.tsMissing? '쓰나미 기록 없음' : `쓰나미 ${nts}건`;
+        const b=document.createElement('button'); b.className='scene'+(era?' era':''); b.dataset.key=s.key; b.setAttribute('aria-pressed','false');
+        if(era){ b.innerHTML=`<span class="era-y">${s.year}</span><span class="era-m">${s.ev.length}건 · M${mx.toFixed(1)}</span><span class="era-t${s.tsMissing?' none':''}">${tsTxt}</span>`; b.setAttribute('aria-label',`${s.title}, 규모 7 이상 지진 ${s.ev.length}건, 가장 큰 규모 ${mx.toFixed(1)}, ${tsTxt}`); }
+        else b.innerHTML=`<span class="sc-year">${s.year}</span><span class="sc-body"><span class="sc-title">${s.title}</span><span class="sc-meta">${s.date||s.filter} · ${s.ev.length}건${nts?` · 쓰나미 ${nts}`:''}</span></span><span class="sc-mag">M${mx.toFixed(1)}</span>`;
+        b.onclick=()=>{ ensureStarted(false); Player.load(s,{autoplay:true}); if(mqMobile.matches) this.sheet(false); };
+        wrap.appendChild(b);
+      }
     }
   },
-  renderDiary(s){
-    const p=$('#pane-diary'); const d=s.diary; p.innerHTML='';
-    const h=document.createElement('p'); h.className='headline'; h.innerHTML=d[0].head; p.appendChild(h);
-    const ul=document.createElement('ul'); ul.className='diary';
-    for(const it of d.slice(1)){
-      const li=document.createElement('li'); li.innerHTML=`<span class="k">${it.k}</span><span class="v">${it.v}</span>`;
-      if(it.e){ const b=document.createElement('button'); b.className='btn small go'; b.textContent='▶ 듣기'; b.onclick=()=>{ ensureStarted(false); Player.seekEvent(it.e); }; li.appendChild(b); }
-      ul.appendChild(li);
-    }
-    p.appendChild(ul);
-    const note=document.createElement('p'); note.className='src-note'; note.textContent='모든 숫자는 위 USGS 기록에서 바로 계산했어요. 심박은 재생 시각 기준 직전 한 시간의 지진 수와 규모로 정해요.'; p.appendChild(note);
-  },
-  renderAdopt(){
-    const p=$('#pane-adopt'), a=Adopt.a; p.innerHTML='';
-    if(!a){
-      p.innerHTML=`<p class="headline">지진대 하나를 <b>입양</b>해 보세요.</p><p class="lede">그곳이 흔들릴 때마다 당신만을 위한 짧은 멜로디가 울리고, 지구 위에 하트가 피어나요. 이름도 지어줄 수 있어요.</p><div class="regions" id="regionBtns"></div><div class="row"><button class="btn" id="pickBtn">지구 위에서 직접 고르기</button></div>`;
-      const box=p.querySelector('#regionBtns');
-      for(const r of PRESETS){ const b=document.createElement('button'); b.className='btn'; b.textContent=r.name; b.onclick=()=>Adopt.set(r); box.appendChild(b); }
-      p.querySelector('#pickBtn').onclick=()=>startPick();
-      return;
-    }
-    p.innerHTML=`<div class="pet"><div class="pet-face"><svg viewBox="0 0 32 29" aria-hidden="true"><path d="M16 28.5C6 21 0 15.5 0 8.6 0 3.6 3.9 0 8.6 0c3 0 5.8 1.6 7.4 4.2C17.6 1.6 20.4 0 23.4 0 28.1 0 32 3.6 32 8.6 32 15.5 26 21 16 28.5z"/></svg></div>
-      <div><label class="eyebrow" for="petName">내 지진대 이름</label><input id="petName" maxlength="12" value=""><div class="where">${a.label} · 반경 ${a.rkm.toLocaleString('ko-KR')} km · ${fYMD(a.born)}부터 함께</div></div></div>
-      <div class="stats" id="petStats"></div><p class="persona" id="persona"></p>
-      <div class="row"><button class="btn" id="petGo">이 기록에서 들려줘</button><button class="btn" id="petMove">다른 곳으로 이사</button></div>`;
-    const inp=p.querySelector('#petName'); inp.value=a.name;
-    inp.onchange=()=>{ a.name=inp.value.trim()||a.name; inp.value=a.name; store.set('adopt',a); this.renderAdoptStats(); };
-    p.querySelector('#petMove').onclick=()=>{ Adopt.clear(); };
-    p.querySelector('#petGo').onclick=()=>{ const st=Adopt.statsFor(Player.s); if(st.n){ ensureStarted(false); Player.seekEvent(st.max); } else this.toast('이 기록에는 아직 목소리가 없어요. 시간 여행 탭에서 다른 날을 골라보세요'); };
-    this.renderAdoptStats();
-  },
-  renderAdoptStats(){
-    const a=Adopt.a, box=$('#petStats'); if(!a||!box||!Player.s) return;
-    const st=Adopt.statsFor(Player.s);
-    box.innerHTML=`<div class="stat"><b>${st.n}</b><span>이 기록 속 박동</span></div><div class="stat"><b>${st.max?'M'+st.max.mag.toFixed(1):'–'}</b><span>가장 큰 울음</span></div><div class="stat"><b>${Adopt.beats}</b><span>함께 들은 박동</span></div>`;
-    $('#persona').textContent=persona(a.name,st,Player.s);
+  renderDetail(s){
+    const box=$('#sceneDetail'), era=s.kind==='era', nts=s.tsAll.length;
+    box.innerHTML=`<h3>${s.title}${s.date?` · ${s.date}`:''}</h3><p>${era? eraBlurb(s) : s.blurb}</p><span class="filter">${s.filter} · 지진 ${s.events.length}건 · 규모 ${s.magMin.toFixed(1)}–${s.magMax.toFixed(1)}${nts? ` · 쓰나미 ${nts}건` : ''}</span>`;
+    const row=(mark,cls,name,meta,go)=>{
+      const li=document.createElement('li'), b0=document.createElement('b'), sp=document.createElement('span'), sm=document.createElement('small'), b=document.createElement('button');
+      b0.className=cls; b0.textContent=mark; sp.className='tl-name'; sp.textContent=name; sm.textContent=meta; sp.appendChild(sm);
+      b.className='btn small'; b.textContent='▶'; b.setAttribute('aria-label',name+' 듣기'); b.onclick=()=>{ ensureStarted(false); go(); if(mqMobile.matches) this.sheet(false); };
+      li.append(b0,sp,b); return li;
+    };
+    const list=(title,items)=>{ if(!items.length) return; const h=document.createElement('div'), ul=document.createElement('ul'); h.className='eyebrow'; h.textContent=title; ul.className='top-list'; ul.append(...items); box.append(h,ul); };
+    if(era) list('가장 큰 지진', [...s.events].sort((a,b)=>b.mag-a.mag).slice(0,5).map(e=>row('M'+e.mag.toFixed(1),'q',quakeName(e),fYMD(e.t)+(e.tsu? ' · '+tsuText(e.tsu) : ''),()=>Player.seekEvent(e))));
+    list('가장 높았던 쓰나미', s.tsAll.filter(w=>w.h!=null).sort((a,b)=>b.h-a.h).slice(0,3).map(w=>row(fH(w.h),'t',w.ko,(era? fYMD(w.t)+' · ' : '')+(w.q? `규모 ${w.q.mag.toFixed(1)} 지진 뒤` : `원인 ${CAUSE[w.cause]||CAUSE[0]}`),()=>Player.seekTsunami(w))));
   },
   renderVoicePane(){
     const p=$('#pane-voice');
@@ -1811,15 +1967,15 @@ const UI={
       }
       p.appendChild(g);
     }
-    const bg=document.createElement('div'); bg.className='vgroup'; bg.innerHTML='<div class="eyebrow">심장 박자 소리</div><div class="vrow"></div>';
+    const bg=document.createElement('div'); bg.className='vgroup'; bg.innerHTML='<div class="eyebrow">박자 소리</div><div class="vrow"></div>';
     for(const B of BEATS){ const b=document.createElement('button'); b.className='vbtn'; b.dataset.beat=B.key; b.title=B.desc; b.setAttribute('aria-pressed','false'); b.innerHTML=`<span class="nm">${B.ko}</span><span class="led"></span>`; b.onclick=()=>{ ensureStarted(true); Voice.setBeat(B.key); }; bg.lastElementChild.appendChild(b); }
     p.appendChild(bg);
-    p.insertAdjacentHTML('beforeend','<p class="src-note">키보드의 [ ] 키로도 바꿀 수 있어요. 악기 소리는 FluidR3 GM 사운드폰트(Frank Wen, MIT 라이선스)로 한 음씩 연주해 녹음했어요.</p>');
+    p.insertAdjacentHTML('beforeend','<p class="src-note">키보드의 [ ] 키로도 바꿀 수 있습니다. 악기 소리는 FluidR3 GM 사운드폰트(Frank Wen, MIT 라이선스)로 한 음씩 연주해 녹음했습니다.</p>');
   },
   _vkey:'',
   onVoice(){
     const P=Voice.cur, B=BEATS.find(b=>b.key===Voice.beat)||BEATS[0], st=Sound.ready? Samples.state(Voice.keys()) : 'ready';
-    const sub= st==='loading'? '악기 소리 불러오는 중…' : st==='fail'? '악기 소리를 못 불러와 전자음으로 연주해요' : P.ko.includes(P.fam)? P.ko : `${P.ko} · ${P.fam}`;
+    const sub= st==='loading'? '악기 소리 불러오는 중…' : st==='fail'? '악기 소리를 불러오지 못해 전자음으로 연주합니다' : P.ko.includes(P.fam)? P.ko : `${P.ko} · ${P.fam}`;
     const T=(id,v)=>{ const el=document.getElementById(id); if(el && el.textContent!==v) el.textContent=v; };
     T('lcdNum',pad3(P.no)); T('lcdName',P.en); T('lcdKo',P.ko); T('lcdSub',sub); T('lcdBeat','♥ '+B.en);
     T('lcdBigNum',pad3(P.no)); T('lcdBigName',P.en); T('lcdBigSub',sub); T('lcdBigBeat','BEAT ♥ '+B.en); T('vDesc',P.desc);
@@ -1827,30 +1983,31 @@ const UI={
     document.querySelectorAll('.vbtn[data-i]').forEach(b=>b.setAttribute('aria-pressed',+b.dataset.i===Voice.i));
     document.querySelectorAll('.vbtn[data-beat]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.beat===Voice.beat));
     $('#lcd').setAttribute('aria-label',`악기 ${pad3(P.no)} ${P.ko}. 눌러서 악기 고르기`);
-    const gv=$('#gateVoice'); if(gv) gv.innerHTML=`악기 <b>${pad3(P.no)}</b> ${P.ko} · 피아노·브라스·쳄발로 등 ${VOICE_LIST.length}가지 중에 고를 수 있어요`;
-    if(this._vkey!==P.key){ this._vkey=P.key; this.renderSound(); if(lastEv) $('#nowVoice').textContent=`${noteName(lastEv.midi)}(${noteSol(lastEv.midi)}) · ${voiceLabel(lastEv)}`; }
+    const gv=$('#gateVoice'); if(gv) gv.innerHTML=`악기 <b>${pad3(P.no)}</b> ${P.ko} · 피아노, 브라스, 쳄발로 등 ${VOICE_LIST.length}가지 중에서 고를 수 있습니다`;
+    if(this._vkey!==P.key){ this._vkey=P.key; this.renderSound(); if(lastEv && this.nowItem===lastEv) $('#nowVoice').textContent=`${noteName(lastEv.midi)}(${noteSol(lastEv.midi)}) · ${voiceLabel(lastEv)}`; }
   },
   renderSound(){
-    const row=$('#scaleRow'); row.innerHTML='';
-    for(const m of [1,3,5,6,7,9]){ const n=magMidi(m); const d=document.createElement('div'); d.innerHTML=`<b>M${m}</b><span>${noteName(n)} ${noteSol(n)}</span>`; row.appendChild(d); }
+    const fill=(row,ms,f)=>{ row.innerHTML=''; for(const m of ms){ const n=f(m), d=document.createElement('div'); d.innerHTML=`<b>M${m}</b><span>${noteName(n)} ${noteSol(n)}</span>`; row.appendChild(d); } };
+    fill($('#scaleRow'),[1,3,5,6,7,9],magMidi); fill($('#scaleRowEra'),[7,7.5,8,8.5,9,9.5],eraMidi);
     const vl=$('#voiceList'); vl.innerHTML=''; const P=Voice.cur;
     $('#depthEyebrow').textContent=`깊이 → 음색 · 지금 악기 ${pad3(P.no)} ${P.ko}`;
     VOICES.forEach((v,i)=>{
-      const nm= P.key==='synth'? v.name : P.key==='orch'? `${v.name} · ${v.orch}` : `${v.name} · ${P.ko}`, ds= P.key==='synth'? v.desc : P.key==='orch'? v.odesc : v.sdesc;
+      const nm= P.key==='synth'? `${v.name} · ${v.syn}` : P.key==='orch'? `${v.name} · ${v.orch}` : `${v.name} · ${P.ko}`, ds= P.key==='synth'? v.desc : P.key==='orch'? v.odesc : v.sdesc;
       const el=document.createElement('div'); el.className='voice'; el.style.color=css(depthRGB(v.depth));
       el.innerHTML=`<i></i><div style="color:var(--ink)"><span class="vn">${nm}</span><span class="vr">${v.range}</span><p>${ds}</p></div>`;
       const b=document.createElement('button'); b.className='btn small'; b.textContent='▶ 미리 듣기'; b.style.color='var(--ink)';
       b.onclick=()=>{ ensureStarted(true); const fake={mag:3.2,depth:v.depth,voice:i,midi:magMidi(3.2)}; Promise.all([Samples.ready(Voice.keys()),new Promise(r=>setTimeout(r,60))]).then(()=>{ if(Sound.live()) Sound.quake(fake,Sound.ctx.currentTime+0.05,{pan:0,far:0}); }); };
       el.appendChild(b); vl.appendChild(el);
     });
-    $('#srcNote').innerHTML=`데이터: <a href="https://earthquake.usgs.gov/earthquakes/feed/" target="_blank" rel="noopener">USGS 지진 피드</a>와 <a href="https://earthquake.usgs.gov/fdsnws/event/1/" target="_blank" rel="noopener">FDSN 지진 카탈로그</a>. 지도: Natural Earth (world-atlas). 최근 기록은 ${fShort(Date.parse(DATA.fetchedAt))}(한국 시각)에 받았어요.`;
+    const tw=$('#tsuDemo');
+    if(tw && !tw.childElementCount) for(const h of [0.3,3,30]){
+      const b=document.createElement('button'); b.className='btn small'; b.textContent=`▶ 쓰나미 ${h} m`;
+      b.onclick=()=>{ ensureStarted(true); const I=tsuI(h); setTimeout(()=>{ if(Sound.live()) Sound.tsunami({I,midi:tsuMidi(I),runups:h>=3?60:4},Sound.ctx.currentTime+0.05,{pan:0,far:0}); },60); };
+      tw.appendChild(b);
+    }
+    $('#srcNote').innerHTML=`데이터: <a href="https://earthquake.usgs.gov/earthquakes/feed/" target="_blank" rel="noopener">USGS 지진 피드</a>, <a href="https://earthquake.usgs.gov/fdsnws/event/1/" target="_blank" rel="noopener">USGS FDSN 지진 카탈로그</a>, <a href="https://doi.org/10.7289/V5PN93H7" target="_blank" rel="noopener">NOAA NCEI 세계 쓰나미 데이터베이스</a>. 지도: Natural Earth (world-atlas). 최근 기록은 ${fShort(Date.parse(DATA.fetchedAt))}(한국 시각)에 받았습니다.`;
   }
 };
-function startPick(){
-  if(!renderer){ UI.toast('이 기기에서는 지구 위에서 고를 수 없어요. 목록에서 골라주세요'); return; }
-  Adopt.picking=true; $('#gl').classList.add('picking'); $('#pickHint').hidden=false; if(mqMobile.matches) UI.sheet(false);
-}
-
 /* ================= Picking on the globe ================= */
 let downAt=null;
 function bindPicking(){
@@ -1860,30 +2017,22 @@ function bindPicking(){
 }
 function tap(cx,cy){
   const r=$('#gl').getBoundingClientRect(), x=cx-r.left, y=cy-r.top;
-  const ndc=new THREE.Vector2(x/r.width*2-1,-(y/r.height)*2+1);
-  if(Adopt.picking){
-    raycaster.setFromCamera(ndc,camera); const hit=raycaster.intersectObject(ocean)[0];
-    Adopt.picking=false; $('#gl').classList.remove('picking'); $('#pickHint').hidden=true;
-    if(hit){ const p=hit.point.clone().normalize(), lat=Math.asin(p.y)/DEG; let lon=Math.atan2(p.z,-p.x)/DEG-180; if(lon<-180) lon+=360;
-      Adopt.set({name:`${Math.abs(lat).toFixed(1)}°${lat>=0?'N':'S'} ${Math.abs(lon).toFixed(1)}°${lon>=0?'E':'W'}`,lat,lon,rkm:700}); UI.tab('adopt'); }
-    return;
-  }
   const s=Player.s; if(!s) return;
   const camN=camera.position.clone().normalize(), horizon=1/camera.position.length(), xr=U.uXray.value>0.5;
   let best=null,bd=(COARSE?26:16)**2; const v=new THREE.Vector3();
-  for(const e of s.events){
+  for(const e of [...s.events,...s.tsFree]){
     if(!xr && e.vec.dot(camN)<horizon) continue;
     v.copy(e.vec).multiplyScalar(lerp(1.007,e.dr,U.uXray.value)).project(camera);
     const sx=(v.x*0.5+0.5)*r.width, sy=(-v.y*0.5+0.5)*r.height, d=(sx-x)**2+(sy-y)**2; if(d<bd){bd=d;best=e;}
   }
-  if(best){ ensureStarted(false); emitQuake(best,clockNow()+0.03,false); }
+  if(best){ ensureStarted(false); if(best.kind==='tsu') emitTsunami(best,clockNow()+0.03,false); else emitQuake(best,clockNow()+0.03,false); }
 }
 
 /* ================= Start / gate ================= */
 let started=false;
 function ensureStarted(withSound,fromGate){
   if(!started){
-    started=true; $('#gate').classList.add('out'); setTimeout(()=>{ const g=$('#gate'); if(g) g.hidden=true; },1000);
+    started=true; $('#gate').classList.add('out'); $('#hud').classList.remove('gated'); setTimeout(()=>{ const g=$('#gate'); if(g) g.hidden=true; },1000);
     if(Sound.init()){ Sound.muted=!withSound; Sound.start(); }
     UI.setMute(); UI.onVoice(); if(fromGate) Player.play();
     return;
@@ -1947,7 +2096,6 @@ function frame(){
     fp.uFlash.value=FX.flash; fp.uShockT.value=FX.shockT; fp.uShockA.value=FX.shockA; fp.uAlert.value=FX.alert*(0.45+0.55*Heart.env); fp.uAspect.value=Layout.W/Math.max(1,Layout.H);
     if(FX.e && (FX.flash>0.01 || FX.shockT<5)){ _v.copy(FX.e.vec).project(camera); fp.uFPos.value.set(_v.x*0.5+0.5,_v.y*0.5+0.5); }
     const al=FX.alert>0.12; if(al!==FX.alertOn){ FX.alertOn=al; $('#bpmBox').classList.toggle('alert',al); }
-    if(adoptGroup.visible){ const hs=adoptGroup.userData.heart; hs.scale.setScalar(0.06+Heart.env*0.022); const c=adoptGroup.userData.center, cn=camera.position.clone().normalize(); hs.material.opacity=c.dot(cn)>0.05||xr>0.5?0.95:0; }
     updateCamera(dt); updatePools(); updateCorona(dt); composer.render(); updateTag();
   }
   drawSeismo(dt); drawEcg(dt);
@@ -1958,13 +2106,12 @@ function frame(){
 /* ================= Boot ================= */
 function boot(){
   const ok=initGL();
-  if(!ok){ const d=document.createElement('div'); d.className='nogl'; d.textContent='이 기기에서는 3D 지구를 그릴 수 없어요. 소리와 타임라인은 그대로 쓸 수 있어요.'; $('#app').insertBefore(d,$('#hud')); $('#gl').style.display='none'; }
+  if(!ok){ const d=document.createElement('div'); d.className='nogl'; d.textContent='이 기기에서는 3D 지구를 그릴 수 없습니다. 소리와 타임라인은 그대로 쓸 수 있습니다.'; $('#app').insertBefore(d,$('#hud')); $('#gl').style.display='none'; }
   else bindPicking();
   UI.init(); Samples.want(Voice.keys()); UI.onVoice();
   const want=store.get('scene','now'), s=SCENES.find(x=>x.key===want)||SCENES[0];
   Player.load(s,{});
   if(ok){ const f=s.focus; camera.position.set(f.x,f.y,f.z).normalize().multiplyScalar(baseDist); }
-  placeAdoptMarker(Adopt.a);
   const relayout=()=>{ if(ok) layoutGlobe(); drawTimeline(); };
   relayout(); if(ok){ const f=Player.s.focus; camera.position.set(f.x,f.y+0.25,f.z).normalize().multiplyScalar(baseDist); if(!RM) Cam.intro={t:0,dur:4.2,k:2.1}; }
   addEventListener('resize',relayout); mqMobile.addEventListener && mqMobile.addEventListener('change',relayout);
@@ -1973,7 +2120,7 @@ function boot(){
   requestAnimationFrame(frame);
   tryLive();
 }
-if(location.hash==='#debug') window.EBPM={Sound,Voice,Samples,Player,Heart,UI,Cam,U,Tag,ECG,FX,SCENES,spec,emitQuake,clockNow,get camera(){ return camera; }};
+if(location.hash==='#debug') window.EBPM={Sound,Voice,Samples,Player,Heart,UI,Cam,U,Tag,ECG,FX,SCENES,KIND,spec,emitQuake,emitTsunami,koPlace,quakeName,clockNow,tsuI,tsuMidi,magMidi,get camera(){ return camera; }};
 boot();
 })();
 </script>
